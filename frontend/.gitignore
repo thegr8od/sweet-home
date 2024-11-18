@@ -7,24 +7,69 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
+# Node.js 관련
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 빌드 결과물
+dist/
+dist-ssr/
+build/
+
+# 환경 변수
+.env
+.env.*.local
 *.local
 
+# Vue 프로젝트
+/.idea/
+/.vscode/
+!.vscode/extensions.json
+/public/static/
+/public/**/*.js
+/public/**/*.map
+.vite/
+vite.config.js
+vite.config.ts
+
+# TypeScript 관련
+tsconfig.json
+jsconfig.json
+*.tsbuildinfo
+
+# VSCode 개인 설정 파일
+.vscode/*
+!.vscode/extensions.json
+
+# OS 관련
+.DS_Store
+Thumbs.db
+desktop.ini
+*.sw?
+
+# Linter 및 Formatter
+.eslintcache
+.prettiercache
+
+# 테스트 관련
+/coverage/
+/jest-cache/
+/jest-config/
 /cypress/videos/
 /cypress/screenshots/
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 
-*.tsbuildinfo
+# Pinia persisted state (사용 시)
+/pinia-cache/
