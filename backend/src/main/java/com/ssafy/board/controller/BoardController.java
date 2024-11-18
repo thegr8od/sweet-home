@@ -17,7 +17,7 @@ import com.ssafy.board.model.service.BoardService;
 import com.ssafy.user.model.UserDto;
 
 import jakarta.servlet.http.HttpSession;
-
+/*test*/
 @Controller
 @RequestMapping("/board")
 public class BoardController {
