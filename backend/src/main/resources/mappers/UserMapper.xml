@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.user.mapper.UserMapper">
+
+	<insert id="registerUser" parameterType="UserDto"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO users (user_id, user_password, user_name, join_date)
+		VALUES (#{id}, #{password}, #{name}, NOW())
+	</insert>
+
+	<select id="searchAllUser" resultType="UserDto">
+		SELECT * FROM users ORDER BY user_id ASC;
+	</select>
+
+	<select id="searchUser" parameterType="UserDto"
+		resultType="UserDto">
+		SELECT user_id AS id, user_password AS password, user_name AS name,
+		email_domain AS email, join_date AS joinDate
+		FROM users
+		WHERE user_id = #{id} AND user_password = #{password}
+	</select>
+
+	<update id="editUser" parameterType="UserDto">
+		UPDATE users
+		SET user_password = #{password} , user_name = #{name}
+		WHERE user_id = #{id}
+	</update>
+
+	<delete id="deleteUser" parameterType="String">
+		DELETE FROM users WHERE user_id = #{userId}
+	</delete>
+
+</mapper>

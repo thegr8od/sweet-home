@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.dong.mapper.DongCodeMapper">
+    
+    <!-- Get all Sido -->
+    <select id="getAllSido" resultType="String">
+        SELECT DISTINCT sido_name FROM dongcodes;
+    </select>
+
+    <!-- Get Gugun by Sido -->
+    <select id="getGugunBySido" parameterType="String" resultType="String">
+        SELECT DISTINCT gugun_name FROM dongcodes WHERE sido_name = #{sidoName};
+    </select>
+
+    <!-- Get Dong by Gugun and Sido -->
+    <select id="getDongByGugun" parameterType="map" resultType="String">
+        SELECT DISTINCT dong_name 
+        FROM dongcodes 
+        WHERE sido_name = #{sidoName} AND gugun_name = #{gugunName};
+    </select>
+
+</mapper>

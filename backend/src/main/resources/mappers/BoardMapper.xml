@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.board.mapper.BoardMapper">
+
+    <select id="selectAll" resultType="com.ssafy.board.model.BoardDto">
+        SELECT * FROM board
+    </select>
+
+    <select id="selectByCode" parameterType="string" resultType="com.ssafy.board.model.BoardDto">
+        SELECT * FROM board WHERE postId = #{postId}
+    </select>
+
+    <insert id="insert" parameterType="com.ssafy.board.model.BoardDto">
+        INSERT INTO board (userId, title, content)
+        VALUES (#{userId}, #{title}, #{content})
+    </insert>
+
+    <delete id="deleteByCode" parameterType="string">
+        DELETE FROM board WHERE postId = #{postId}
+    </delete>
+
+    <update id="update" parameterType="com.ssafy.board.model.BoardDto">
+        UPDATE board
+        SET title = #{title}, content = #{content}
+        WHERE postId = #{postId}
+    </update>
+
+    <update id="updateView" parameterType="string">
+        UPDATE board
+        SET viewCount = viewCount + 1
+        WHERE postId = #{postId}
+    </update>
+
+</mapper>

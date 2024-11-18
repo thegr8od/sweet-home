@@ -1,0 +1,11 @@
+body {
+  margin-top: 120px;
+}
+
+#board-title {
+  display: inline;
+  text-decoration-color: #fffa96cc; /*색상 변경시 수정*/
+  text-decoration-style: solid;
+  text-decoration-thickness: 0.1em;
+  background-image: linear-gradient(to top, #fffa96cc 65%, transparent 0);
+}
