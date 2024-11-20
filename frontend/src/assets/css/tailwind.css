@@ -1,0 +1,48 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* src/assets/css/tailwind.css */
+
+@font-face {
+  font-family: 'Spoqa Han Sans Neo';
+  src:
+    url('@/assets/fonts/SpoqaHanSansNeo-Light.woff2') format('woff2'),
+    url('@/assets/fonts/SpoqaHanSansNeo-Light.woff') format('woff');
+  font-weight: 300; /* Light */
+  font-style: normal;
+}
+
+/* Regular 폰트 */
+@font-face {
+  font-family: 'Spoqa Han Sans Neo';
+  src:
+    url('@/assets/fonts/SpoqaHanSansNeo-Regular.woff2') format('woff2'),
+    url('@/assets/fonts/SpoqaHanSansNeo-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Bold 폰트 */
+@font-face {
+  font-family: 'Spoqa Han Sans Neo';
+  src:
+    url('@/assets/fonts/SpoqaHanSansNeo-Bold.woff2') format('woff2'),
+    url('@/assets/fonts/SpoqaHanSansNeo-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Medium 폰트 */
+@font-face {
+  font-family: 'Spoqa Han Sans Neo';
+  src:
+    url('@/assets/fonts/SpoqaHanSansNeo-Medium.woff2') format('woff2'),
+    url('@/assets/fonts/SpoqaHanSansNeo-Medium.woff') format('woff');
+  font-weight: 500; /* Medium */
+  font-style: normal;
+}
+
+* {
+  font-family: 'Spoqa Han Sans Neo', sans-serif;
+}
