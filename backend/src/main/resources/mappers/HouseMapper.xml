@@ -6,30 +6,31 @@
 <mapper namespace="com.ssafy.house.mapper.HouseMapper">
 
 	<!-- 동+거래년도+거래월 별 아파트 실거래 정보 조회 -->
-	<select id="getDealsByDong" parameterType="map"
-		resultType="com.ssafy.house.model.HouseDealResponseDto">
+	<select id="getDealsByAddress" parameterType="map"
+		resultType="com.ssafy.house.model.HouseDealSimpleResponseDto">
 		SELECT
-		hi.apt_seq AS aptSeq,
-		hi.apt_nm AS aptName,  <!-- alias로 필드 이름을 맞춤 -->
-		hd.floor,
-		hd.exclu_use_ar AS excluUseAr,  <!-- alias로 필드 이름을 맞춤 -->
-		hi.umd_nm AS legalDong,  <!-- alias로 필드 이름을 맞춤 -->
-		hd.deal_amount AS tradeAmount  <!-- alias로 필드 이름을 맞춤 -->
+			hi.apt_seq AS aptSeq,
+			hi.apt_nm AS aptName,
+			MAX(hd.floor) AS floor,  <!-- 예시: 최댓값 -->
+			AVG(hd.exclu_use_ar) AS excluUseAr,  <!-- 예시: 평균값 -->
+			hi.umd_nm AS legalDong,
+			MAX(hd.deal_amount) AS tradeAmount,  <!-- 예시: 최댓값 -->
+			hi.latitude AS latitude,
+			hi.longitude AS longitude
 		FROM housedeals hd
-		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-		JOIN
-		dongcodes dc ON hi.umd_nm = dc.dong_name
+			JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+			JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
 		WHERE dc.sido_name = #{sido}
-		AND dc.gugun_name = #{gugun}
-		AND dc.dong_name = #{dong}
-		AND
-		CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+			AND dc.gugun_name = #{gugun}
+			AND dc.dong_name = #{dong}	
+			AND CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
 		<if test="year != null and year > 0">
 			AND hd.deal_year = #{year}
 		</if>
 		<if test="month != null and month > 0">
 			AND hd.deal_month = #{month}
 		</if>
+		GROUP BY hi.apt_seq, hi.apt_nm  <!-- 아파트 이름별로 그룹화 -->
 	</select>
 
 	<!-- 특정 아파트 이름이 포함된 실거래 정보 조회 -->

@@ -1,24 +1,22 @@
 <template>
   <div
-    class="m-2"
+    class="house-list-item"
     @click="selectHouse"
     @mouseover="colorChange(true)"
     @mouseout="colorChange(false)"
     :class="{ 'mouse-over-bgcolor': isColor }"
-    style="display: flex; align-items: center"
   >
     <div class="apt-icon-div">
       <b-icon-house-door-fill class="apt-icon" />
     </div>
     <div class="apt-info-div">
-      <div style="text-overflow: ellipsis">[{{ house.legalDong }}] {{ house.aptName }}</div>
+      <div class="apt-name">[{{ house.legalDong }}] {{ house.aptName }}</div>
     </div>
   </div>
 </template>
 
 <script>
 import { useHouseStore } from '@/stores/houseStore'
-// import { BUS } from '@/store/modules/EventBus'
 
 export default {
   name: 'HouseListItem',
@@ -37,7 +35,6 @@ export default {
   },
   setup() {
     const houseStore = useHouseStore()
-
     return {
       houseStore,
     }
@@ -49,29 +46,28 @@ export default {
   },
   methods: {
     selectHouse() {
-      //   // house 위치 변경 이벤트
-      //   BUS.$emit('change-hposition', {
-      //     lat: this.house.lat,
-      //     lng: this.house.lng,
-      //   })
+      console.log('Selected house:', this.house)
 
-      // house deals가 바뀔 때 마다 새로운 detail창 불러오기
-      this.houseStore.setNoneFalse(true)
-      this.houseStore.detailHouse(this.house)
+      this.houseStore.setSelectedHouse(this.house)
 
-      // houseinfo 업데이트
-      this.houseinfo.roadName = this.house.roadName
+      if (this.house.latitude && this.house.longitude) {
+        this.houseStore.setSelectedPosition({
+          lat: parseFloat(this.house.latitude),
+          lng: parseFloat(this.house.longitude),
+        })
+      }
 
-      let roadNameBonbun = this.house.roadNameBonbun
-      roadNameBonbun = Number(roadNameBonbun).toString()
-      this.houseinfo.roadNameBonbun = roadNameBonbun
+      if (this.house.roadName) {
+        this.houseinfo.roadName = this.house.roadName
 
-      let roadNameBubun = this.house.roadNameBubun
-      roadNameBubun = Number(roadNameBubun).toString()
-      this.houseinfo.roadNameBubun = roadNameBubun
+        if (this.house.roadNameBonbun) {
+          this.houseinfo.roadNameBonbun = Number(this.house.roadNameBonbun).toString()
+        }
 
-      // 디테일 정보 가져오기
-      this.houseStore.getDetail(this.houseinfo)
+        if (this.house.roadNameBubun) {
+          this.houseinfo.roadNameBubun = Number(this.house.roadNameBubun).toString()
+        }
+      }
     },
     colorChange(flag) {
       this.isColor = flag
@@ -81,26 +77,45 @@ export default {
 </script>
 
 <style>
-.apt {
-  width: 50px;
+/* Spoqa Han Sans Neo 폰트 적용 */
+* {
+  font-family: 'Spoqa Han Sans Neo', 'sans-serif';
+  font-weight: normal;
 }
 
-.apt-info-div div {
-  white-space: nowrap;
-  width: 278px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: bold;
-  font-size: 16px;
+.house-list-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px; /* 패딩을 상하 16px, 좌우 20px로 증가 */
+  border-bottom: 1px solid #f0f0f0; /* 아이템 사이 구분선 */
+  cursor: pointer;
 }
-.mouse-over-bgcolor {
-  background-color: rgb(214, 211, 211);
+
+.house-list-item:last-child {
+  border-bottom: none; /* 마지막 아이템은 구분선 제거 */
 }
+
 .apt-icon-div {
-  margin: 8px 21px 8px 15px;
+  margin-right: 16px; /* 오른쪽 마진만 지정 */
 }
+
 .apt-icon {
   font-size: 25px;
   color: #2196f3;
+}
+
+.apt-info-div {
+  flex: 1;
+}
+
+.apt-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 16px;
+}
+
+.mouse-over-bgcolor {
+  background-color: #f5f5f5; /* 호버 색상을 좀 더 연하게 변경 */
 }
 </style>

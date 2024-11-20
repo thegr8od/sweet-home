@@ -5,10 +5,15 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.ssafy.dong.model.service.DongCodeService;
 import com.ssafy.house.model.HouseDealResponseDto;
+import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
 import com.ssafy.house.model.service.HouseService;
 
@@ -28,15 +33,15 @@ public class HouseController {
         this.houseService = houseService;
     }
 
-    @GetMapping("/houseDealList")
+    @GetMapping("/houseDealListByAddress")
     @Operation(summary = "아파트 실거래 정보 조회", description = "동/거래년도/월을 기준으로 아파트 실거래 정보 조회")
-    public ResponseEntity<List<HouseDealResponseDto>> getHouseDealList(
+    public ResponseEntity<List<HouseDealSimpleResponseDto>> getHouseDealListByAddress(
             @RequestParam String sido,
             @RequestParam String gugun,
             @RequestParam String dong,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        List<HouseDealResponseDto> result = houseService.getDealsByDong(sido, gugun, dong, year, month);
+        List<HouseDealSimpleResponseDto> result = houseService.getDealsByAddress(sido, gugun, dong, year, month);
         if (result.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

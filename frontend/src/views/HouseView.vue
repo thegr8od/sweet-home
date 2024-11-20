@@ -1,146 +1,102 @@
 <template>
-  <div style="width: 100%; height: 100%">
-    <div class="position-relative">
-      <main class="mt-0 main-content main-content-bg">
-        <section>
-          <DefaultMap class="kakao-map"></DefaultMap>
-          <div>
-            <div class="search-div">
-              <div class="search-container">
-                <!-- 시/도/구/군 선택기 추가 -->
-                <div class="location-selector">
-                  <select v-model="selectedSido" class="location-select">
-                    <option value="">시/도 선택</option>
-                    <option v-for="sido in sidoList" :key="sido" :value="sido">
-                      {{ sido }}
-                    </option>
-                  </select>
-                  <select v-model="selectedGugun" class="location-select">
-                    <option value="">구/군 선택</option>
-                    <option v-for="gugun in gugunList" :key="gugun" :value="gugun">
-                      {{ gugun }}
-                    </option>
-                  </select>
-                  <select v-model="selectedDong" class="location-select">
-                    <option value="">동 선택</option>
-                    <option v-for="dong in dongList" :key="dong" :value="dong">
-                      {{ dong }}
-                    </option>
-                  </select>
-                </div>
-                <div class="search-box">
-                  <input
-                    type="text"
-                    class="search-input"
-                    placeholder="주소나 건물명을 입력하세요"
-                    v-model="searchQuery"
-                  />
-                  <button class="search-button" @click="handleSearch">검색</button>
-                </div>
-              </div>
-              <div class="list-div type1">
-                <house-list class="house-list" />
-              </div>
-            </div>
-            <div v-if="!none" class="detail-div type1">
-              <house-detail class="house-detail" />
-            </div>
-          </div>
-        </section>
-      </main>
+  <div class="house-view-container">
+    <div class="left-panel">
+      <div class="search-div">
+        <house-search-bar />
+        <div class="list-div type1">
+          <house-list class="house-list" />
+        </div>
+      </div>
+      <Transition name="slide">
+        <div v-if="showDetail" class="detail-div">
+          <button class="close-button" @click="closeDetail">×</button>
+          <house-detail />
+        </div>
+      </Transition>
+    </div>
+    <div class="map-container">
+      <DefaultMap class="kakao-map"></DefaultMap>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useHouseStore } from '@/stores/houseStore'
 import HouseSearchBar from '@/components/house/HouseSearchBar.vue'
 import HouseList from '@/components/house/HouseList.vue'
-import HouseDetail from '@/components/house/HouseDetail.vue'
 import DefaultMap from '@/components/map/DefaultMap.vue'
+import HouseDetail from '@/components/house/HouseDetail.vue'
+import { useHouseStore } from '@/stores/houseStore'
+import { storeToRefs } from 'pinia'
 
 export default {
   name: 'HouseView',
   components: {
     HouseSearchBar,
     HouseList,
-    HouseDetail,
     DefaultMap,
+    HouseDetail,
   },
   setup() {
     const houseStore = useHouseStore()
-    const searchQuery = ref('')
-    const selectedSido = ref('')
-    const selectedGugun = ref('')
-    const selectedDong = ref('')
+    const { showDetail } = storeToRefs(houseStore)
 
-    // 임시 데이터 - 실제로는 API나 스토어에서 가져와야 합니다
-    const sidoList = ref(['서울특별시', '경기도', '인천광역시'])
-    const gugunList = ref(['강남구', '서초구', '송파구'])
-    const dongList = ref(['역삼동', '삼성동', '청담동'])
-
-    // Computed values
-    const { none, houses, markerPositions, house, detail1, detail2 } = houseStore
-
-    // Methods
-    const fetchHouseListByAddress = (address) => houseStore.getHouseListByAddress(address)
-    const fetchHouseList = (dongName) => houseStore.getHouseList(dongName)
-    const fetchHouseDetails = (house) => houseStore.detailHouse(house)
-
-    const handleSearch = () => {
-      if (selectedDong.value) {
-        fetchHouseList(selectedDong.value)
-      } else if (searchQuery.value) {
-        fetchHouseListByAddress(searchQuery.value)
-      }
+    const closeDetail = () => {
+      houseStore.closeDetail()
     }
 
     return {
-      none,
-      houses,
-      markerPositions,
-      house,
-      detail1,
-      detail2,
-      fetchHouseListByAddress,
-      fetchHouseList,
-      fetchHouseDetails,
-      // 새로 추가된 반응형 변수들
-      searchQuery,
-      selectedSido,
-      selectedGugun,
-      selectedDong,
-      sidoList,
-      gugunList,
-      dongList,
-      handleSearch,
+      showDetail,
+      closeDetail,
     }
-  },
-  onBeforeUnmount() {
-    const houseStore = useHouseStore()
-    houseStore.setNoneFalse(true)
   },
 }
 </script>
 
-<style scoped>
+<style>
+/* Spoqa Han Sans Neo 폰트 import */
+@import url(//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css);
+
 /* 기본 스타일 */
-.underline-orange {
-  display: inline-block;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 70%, rgba(231, 149, 27, 0.3) 30%);
+* {
+  font-family: 'Spoqa Han Sans Neo', 'sans-serif';
+  font-weight: normal;
+}
+
+.house-view-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+.left-panel {
+  display: flex;
+  height: 94vh;
+  margin-top: 54px;
+  position: relative;
+  z-index: 2;
 }
 
 .search-div {
-  position: absolute;
   width: 420px;
-  height: 94vh;
-  z-index: 2;
-  top: 54px;
-  left: 0;
+  height: 100%;
   background-color: #ffffff;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.map-container {
+  flex: 1;
+  height: 100vh;
+}
+
+.kakao-map {
+  width: 100%;
+  height: 100%;
+}
+
+.underline-orange {
+  display: inline-block;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 70%, rgba(231, 149, 27, 0.3) 30%);
 }
 
 .search-container {
@@ -224,26 +180,9 @@ export default {
 }
 
 .list-div {
-  position: relative;
-  width: 100%;
-  height: calc(94vh - 180px);
+  height: calc(100% - 180px);
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px;
-  background-color: #ffffff;
-}
-
-.detail-div {
-  position: absolute;
-  width: 401px;
-  height: 94vh;
-  z-index: 2;
-  top: 54px;
-  left: 420px;
-  background-color: #ffffff;
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
-  overflow-y: auto;
 }
 
 .house-search-bar {
@@ -254,11 +193,6 @@ export default {
 
 .house-list {
   width: 100%;
-}
-
-.kakao-map {
-  height: 100vh;
-  position: relative;
 }
 
 /* 스크롤바 스타일 */
@@ -293,35 +227,106 @@ export default {
   border-color: #e0e0e0;
 }
 
-/* 반응형 스타일 */
+.detail-div {
+  width: 400px;
+  height: 100%;
+  background-color: #ffffff;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+}
+
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* 슬라이드 애니메이션 수정 */
+.slide-enter-active,
+.slide-leave-active {
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  width: 0;
+}
+
+/* 반응형 스타일 수정 */
 @media (max-width: 1200px) {
   .search-div {
     width: 360px;
   }
-
   .detail-div {
-    left: 360px;
     width: 360px;
   }
 }
 
 @media (max-width: 768px) {
+  .house-view-container {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    flex-direction: column;
+    height: 50vh;
+    margin-top: 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 2;
+  }
+
   .search-div {
     width: 100%;
-    height: 50vh;
-    top: 50vh;
+    height: 100%;
   }
 
   .detail-div {
-    display: none;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50vh;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-right: none;
   }
 
-  .kakao-map {
+  .map-container {
     height: 50vh;
   }
 
   .list-div {
-    height: calc(50vh - 180px);
+    height: calc(100% - 180px);
+  }
+
+  /* 모바일에서는 아래에서 위로 슬라이드 */
+  .slide-enter-active,
+  .slide-leave-active {
+    transition: height 0.3s ease;
+  }
+
+  .slide-enter-from,
+  .slide-leave-to {
+    height: 0;
   }
 }
 </style>

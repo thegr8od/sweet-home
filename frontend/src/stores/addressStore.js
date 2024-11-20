@@ -1,7 +1,6 @@
 // stores/addressStore.js
 import { defineStore } from 'pinia'
-import { sidoList, gugunList, dongList } from '@/api/house.js'
-
+import { getSidoList, getGugunList, getDongList } from '@/api/location.js'
 export const useAddressStore = defineStore('addressStore', {
   state: () => ({
     sidos: [],
@@ -11,31 +10,46 @@ export const useAddressStore = defineStore('addressStore', {
 
   actions: {
     async getSido() {
-      try {
-        const { data } = await sidoList()
-        this.sidos = data
-      } catch (error) {
-        console.error('Error fetching sido list', error)
-      }
+      await getSidoList(
+        (response) => {
+          console.log(response)
+          this.sidos = response.data || []
+        },
+        (error) => {
+          console.error('Error fetching sido list', error)
+          this.sidos = []
+        },
+      )
     },
 
     async getGugun(sidoName) {
-      const params = { sidoName }
-      try {
-        const { data } = await gugunList(params)
-        this.guguns = data
-      } catch (error) {
-        console.error('Error fetching gugun list', error)
-      }
+      await getGugunList(
+        { sido: sidoName },
+        (response) => {
+          console.log(response)
+          this.guguns = response.data || []
+          console.log('Guguns:', this.guguns)
+        },
+        (error) => {
+          console.error('Error fetching gugun list', error)
+          this.guguns = []
+        },
+      )
     },
 
-    async getDong(params) {
-      try {
-        const { data } = await dongList(params)
-        this.dongs = data
-      } catch (error) {
-        console.error('Error fetching dong list', error)
-      }
+    async getDong(sidoName, gugunName) {
+      await getDongList(
+        { sido: sidoName, gugun: gugunName },
+        (response) => {
+          console.log(response)
+          this.dongs = response.data || []
+          console.log('Dongs:', this.dongs)
+        },
+        (error) => {
+          console.error('Error fetching dong list', error)
+          this.dongs = []
+        },
+      )
     },
 
     clearAddressData() {

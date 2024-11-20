@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.ssafy.house.mapper.HouseMapper;
 import com.ssafy.house.model.HouseDealResponseDto;
+import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
 
 @Service
@@ -20,8 +21,8 @@ public class HouseServiceImpl implements HouseService {
 	}
 
 	@Override
-	public List<HouseDealResponseDto> getDealsByDong(String sido, String gugun, String dong, Integer year, Integer month) {
-		return houseMapper.getDealsByDong(sido, gugun, dong, year, month);
+	public List<HouseDealSimpleResponseDto> getDealsByAddress(String sido, String gugun, String dong, Integer year, Integer month) {
+		return houseMapper.getDealsByAddress(sido, gugun, dong, year, month);
 	}
 
 	@Override

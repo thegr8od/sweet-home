@@ -2,16 +2,15 @@ package com.ssafy.house.model.service;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Param;
-
 import com.ssafy.house.model.HouseDealResponseDto;
+import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
 
 
 public interface HouseService {
 
 	// 구미시 진평동의 아파트 실거래 정보 조회
-	List<HouseDealResponseDto> getDealsByDong(String sido, String gugun, String dong, Integer year, Integer month);
+	List<HouseDealSimpleResponseDto> getDealsByAddress(String sido, String gugun, String dong, Integer year, Integer month);
 
 	// 특정 아파트 이름으로 실거래 정보 조회
 	List<HouseDealResponseDto> getDealsByAptName(String aptName);

@@ -6,13 +6,14 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.ssafy.house.model.HouseDealResponseDto;
+import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
 
 @Mapper
 public interface HouseMapper {
 
 	// 동별 아파트 실거래 정보 조회
-	List<HouseDealResponseDto> getDealsByDong(
+	List<HouseDealSimpleResponseDto> getDealsByAddress(
 			@Param("sido") String sido, @Param("gugun") String gugun,
 			@Param("dong") String dong, @Param("year") Integer year, @Param("month") Integer month);
 

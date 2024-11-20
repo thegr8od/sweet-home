@@ -12,14 +12,14 @@
 
     <!-- Get Gugun by Sido -->
     <select id="getGugunBySido" parameterType="String" resultType="String">
-        SELECT DISTINCT gugun_name FROM dongcodes WHERE sido_name = #{sidoName};
+        SELECT DISTINCT gugun_name FROM dongcodes WHERE sido_name = #{sidoName} AND gugun_name IS NOT NULL;;
     </select>
 
     <!-- Get Dong by Gugun and Sido -->
     <select id="getDongByGugun" parameterType="map" resultType="String">
         SELECT DISTINCT dong_name 
         FROM dongcodes 
-        WHERE sido_name = #{sidoName} AND gugun_name = #{gugunName};
+        WHERE sido_name = #{sidoName} AND gugun_name = #{gugunName} AND dong_name IS NOT NULL;;
     </select>
 
 </mapper>

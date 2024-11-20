@@ -7,13 +7,15 @@ public class HouseDealResponseDto {
 	private double excluUseAr; // 전용면적
 	private String legalDong; // 법적동 (동 이름)
 	private String tradeAmount; // 거래 금액
+	private String latitude; // 위도
+	private String longitude; // 경도
 
 	// 기본 생성자
 	public HouseDealResponseDto() {
 	}
 
 	public HouseDealResponseDto(String aptSeq, String aptName, String floor, double excluUseAr, String legalDong,
-			String tradeAmount) {
+			String tradeAmount, String latitude, String longitude) {
 		super();
 		this.aptSeq = aptSeq;
 		this.aptName = aptName;
@@ -21,6 +23,8 @@ public class HouseDealResponseDto {
 		this.excluUseAr = excluUseAr;
 		this.legalDong = legalDong;
 		this.tradeAmount = tradeAmount;
+		this.latitude = latitude;
+		this.longitude = longitude;
 	}
 
 	public String getAptSeq() {

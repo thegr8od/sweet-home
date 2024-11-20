@@ -1,83 +1,199 @@
 <template>
   <div class="map-container">
-    <div id="map"></div>
+    <div id="map" ref="mapContainer"></div>
   </div>
 </template>
 
 <script>
+import { useHouseStore } from '@/stores/houseStore'
+import { storeToRefs } from 'pinia'
+
 export default {
   name: 'DefaultMap',
   data() {
     return {
       infowindow: null,
       position: {
-        lat: 33.450701, // 초기 위치 (위도, 경도)
-        lng: 126.570667,
+        lat: 35.8751717287353,
+        lng: 128.570018325571,
       },
-      itemMarker: null,
+      markers: [],
       map: null,
       center: null,
       apiKey: import.meta.env.VITE_KAKAO_MAP_API_KEY,
     }
   },
+  setup() {
+    const houseStore = useHouseStore()
+    const { markerPositions, houses, selectedPosition } = storeToRefs(houseStore)
+    return { markerPositions, houses, selectedPosition }
+  },
+  watch: {
+    markerPositions: {
+      handler(newPositions) {
+        this.updateMarkers(newPositions)
+      },
+      deep: true,
+    },
+    selectedPosition: {
+      handler(newPosition) {
+        if (newPosition && this.map) {
+          this.moveToPosition(newPosition)
+        }
+      },
+      deep: true,
+    },
+  },
   mounted() {
-    const script = document.createElement('script')
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${this.apiKey}&libraries=services`
-
-    // 스크립트 로드가 완료된 후 초기화 함수 실행
-    script.onload = () => {
-      // kakao 객체가 로드되었는지 확인 후 초기화
-      if (window.kakao) {
-        kakao.maps.load(this.initMap)
+    this.$nextTick(() => {
+      if (window.kakao && window.kakao.maps) {
+        this.initMap()
       } else {
-        console.error('Kakao Maps API 로드 실패')
+        this.loadKakaoMap()
       }
-    }
-
-    document.head.appendChild(script)
+    })
   },
   methods: {
-    initMap() {
-      const container = document.getElementById('map')
-      const options = {
-        center: new kakao.maps.LatLng(this.position.lat, this.position.lng),
-        level: 5, // 지도 확대 수준
+    loadKakaoMap() {
+      const script = document.createElement('script')
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${this.apiKey}&libraries=services,clusterer`
+      script.onload = () => {
+        window.kakao.maps.load(() => {
+          this.$nextTick(() => {
+            this.initMap()
+          })
+        })
       }
-
-      this.map = new kakao.maps.Map(container, options)
-
-      const markerPosition = new kakao.maps.LatLng(this.position.lat, this.position.lng)
-      this.itemMarker = new kakao.maps.Marker({
-        position: markerPosition,
-      })
-
-      this.itemMarker.setMap(this.map)
+      document.head.appendChild(script)
     },
-    changeSize(size) {
-      const container = document.getElementById('map')
-      container.style.width = `${size}px`
-      container.style.height = `${size}px`
-      this.map.relayout() // 지도 크기 변경 후 재배치
-    },
-    displayInfoWindow() {
-      if (this.infowindow && this.infowindow.getMap()) {
-        this.map.setCenter(this.infowindow.getPosition())
+    initMap() {
+      if (!this.$refs.mapContainer) {
+        console.error('Map container not found')
         return
       }
 
-      const iwContent = '<div style="padding:5px;">Hello World!</div>'
-      const iwPosition = new kakao.maps.LatLng(33.450701, 126.570667)
-      const iwRemoveable = true
+      const options = {
+        center: new window.kakao.maps.LatLng(this.position.lat, this.position.lng),
+        level: 5,
+      }
 
-      this.infowindow = new kakao.maps.InfoWindow({
-        map: this.map,
-        position: iwPosition,
-        content: iwContent,
-        removable: iwRemoveable,
+      this.map = new window.kakao.maps.Map(this.$refs.mapContainer, options)
+
+      if (this.markerPositions.length > 0) {
+        this.updateMarkers(this.markerPositions)
+      }
+    },
+    updateMarkers(positions) {
+      this.markers.forEach((marker) => marker.setMap(null))
+      this.markers = []
+
+      positions.forEach((position, index) => {
+        const markerPosition = new window.kakao.maps.LatLng(position[0], position[1])
+        const marker = new window.kakao.maps.Marker({
+          position: markerPosition,
+          map: this.map,
+        })
+
+        window.kakao.maps.event.addListener(marker, 'click', () => {
+          const house = this.houses[index]
+          if (house) {
+            if (this.infowindow) this.infowindow.close()
+
+            this.infowindow = new window.kakao.maps.InfoWindow({
+              content: `
+                <div style="padding:10px;width:200px;">
+                  <h4 style="margin:0 0 5px;font-size:14px;">${house.aptName}</h4>
+                  <p style="margin:0;font-size:12px;">${house.legalDong}</p>
+                </div>
+              `,
+            })
+            this.infowindow.open(this.map, marker)
+          }
+        })
+
+        this.markers.push(marker)
       })
 
-      this.map.setCenter(iwPosition)
+      if (positions.length > 0) {
+        const bounds = new window.kakao.maps.LatLngBounds()
+        positions.forEach((position) => {
+          bounds.extend(new window.kakao.maps.LatLng(position[0], position[1]))
+        })
+        this.map.setBounds(bounds)
+      }
     },
+    moveToPosition(position) {
+      if (!this.map || !position) return
+
+      console.log('Moving to position:', position)
+
+      const moveLatLng = new window.kakao.maps.LatLng(position.lat, position.lng)
+
+      // 왼쪽 패널의 너비를 고려하여 오프셋 계산
+      const leftPanelWidth = document.querySelector('.left-panel')?.offsetWidth || 0
+      const mapWidth = this.map.getContainer().offsetWidth
+      const offset = leftPanelWidth / 2
+
+      // 지도 중심점을 약간 오른쪽으로 이동
+      const adjustedLatLng = new window.kakao.maps.LatLng(
+        position.lat,
+        position.lng + (offset / mapWidth) * 0.1, // 경도 값 조정
+      )
+
+      // 현재 지도 레벨을 가져옵니다
+      const currentLevel = this.map.getLevel()
+      const targetLevel = 3
+
+      // 조정된 위치로 부드럽게 이동
+      this.map.panTo(adjustedLatLng)
+
+      // 줌 레벨 조정
+      if (currentLevel > targetLevel) {
+        const smoothZoom = () => {
+          const level = this.map.getLevel()
+          if (level > targetLevel) {
+            this.map.setLevel(level - 1)
+            setTimeout(smoothZoom, 100)
+          }
+        }
+        setTimeout(smoothZoom, 300)
+      }
+
+      // 인포윈도우 표시
+      const markerIndex = this.markerPositions.findIndex((pos) => {
+        return (
+          pos[0].toFixed(7) === position.lat.toFixed(7) &&
+          pos[1].toFixed(7) === position.lng.toFixed(7)
+        )
+      })
+
+      console.log('Marker index:', markerIndex)
+
+      if (markerIndex !== -1) {
+        const house = this.houses[markerIndex]
+        const marker = this.markers[markerIndex]
+
+        if (this.infowindow) this.infowindow.close()
+
+        this.infowindow = new window.kakao.maps.InfoWindow({
+          content: `
+            <div style="padding:10px;width:200px;">
+              <h4 style="margin:0 0 5px;font-size:14px;">${house.aptName}</h4>
+              <p style="margin:0;font-size:12px;">${house.legalDong}</p>
+            </div>
+          `,
+        })
+
+        setTimeout(() => {
+          this.infowindow.open(this.map, marker)
+        }, 500)
+      }
+    },
+  },
+  beforeUnmount() {
+    this.markers.forEach((marker) => marker.setMap(null))
+    if (this.infowindow) this.infowindow.close()
+    this.map = null
   },
 }
 </script>
@@ -88,10 +204,12 @@ export default {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  height: 100%;
 }
 
 #map {
   width: 100%;
   height: 100vh;
+  position: relative;
 }
 </style>
