@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.aptboard.mapper.AptBoardMapper">
+
+    <!-- Create -->
+    <insert id="createBoard" parameterType="AptBoardDto" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO aptboard (apt_seq, user_id, title, content, date)
+        VALUES (#{aptSeq}, #{userId}, #{title}, #{content}, NOW());
+    </insert>
+
+    <!-- Read by ID -->
+    <select id="getBoardById" parameterType="int" resultType="AptBoardDto">
+        SELECT 
+            id AS id,
+            apt_seq AS aptSeq,
+            user_id AS userId,
+            title AS title,
+            content AS content,
+            date AS date
+        FROM aptboard
+        WHERE id = #{id};
+    </select>
+
+    <!-- Read by AptSeq -->
+    <select id="getBoardsByAptSeq" parameterType="String" resultType="AptBoardDto">
+        SELECT 
+            id AS id,
+            apt_seq AS aptSeq,
+            user_id AS userId,
+            title AS title,
+            content AS content,
+            date AS date
+        FROM aptboard
+        WHERE apt_seq = #{aptSeq}
+        ORDER BY date DESC;
+    </select>
+
+    <!-- Update -->
+    <update id="updateBoard" parameterType="AptBoardDto">
+        UPDATE aptboard
+        SET 
+            title = #{title}, 
+            content = #{content}, 
+            date = NOW()
+        WHERE id = #{id};
+    </update>
+
+    <!-- Delete -->
+    <delete id="deleteBoard" parameterType="int">
+        DELETE FROM aptboard WHERE id = #{id};
+    </delete>
+</mapper>

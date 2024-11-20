@@ -17,12 +17,14 @@
 		hd.deal_amount AS tradeAmount  <!-- alias로 필드 이름을 맞춤 -->
 		FROM housedeals hd
 		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-		JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
+		JOIN
+		dongcodes dc ON hi.umd_nm = dc.dong_name
 		WHERE dc.sido_name = #{sido}
 		AND dc.gugun_name = #{gugun}
 		AND dc.dong_name = #{dong}
-		AND CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
-		<if test="year != null and year > 0">			
+		AND
+		CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+		<if test="year != null and year > 0">
 			AND hd.deal_year = #{year}
 		</if>
 		<if test="month != null and month > 0">
@@ -30,21 +32,28 @@
 		</if>
 	</select>
 
-	<!-- 특정 아파트 이름으로 실거래 정보 조회 -->
+	<!-- 특정 아파트 이름이 포함된 실거래 정보 조회 -->
 	<select id="getDealsByAptName" parameterType="String"
-		resultType="com.ssafy.house.model.HouseDealResponseDto">
+		resultType="com.ssafy.house.model.HouseInfoDto">
 		SELECT
-		hi.apt_nm AS aptName,  <!-- alias로 필드 이름을 맞춤 -->
-		hd.floor,
-		hd.exclu_use_ar AS excluUseAr,  <!-- alias로 필드 이름을 맞춤 -->
-		hi.umd_nm AS legalDong,  <!-- alias로 필드 이름을 맞춤 -->
-		hd.deal_amount AS tradeAmount  <!-- alias로 필드 이름을 맞춤 -->
-		FROM housedeals hd
-		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-		JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
-		WHERE hi.apt_nm = #{aptName}
+		hi.apt_seq AS aptSeq,           <!-- 아파트 코드 -->
+		hi.sgg_cd AS sggCd,             <!-- 시군구 코드 -->
+		hi.umd_cd AS umdCd,             <!-- 읍면동 코드 -->
+		hi.umd_nm AS umdNm,             <!-- 읍면동 이름 -->
+		hi.jibun AS jibun,              <!-- 지번 -->
+		hi.road_nm_sgg_cd AS roadNmSggCd, <!-- 도로명 시군구 코드 -->
+		hi.road_nm AS roadNm,           <!-- 도로명 -->
+		hi.road_nm_bonbun AS roadNmBonbun, <!-- 도로명 본번 -->
+		hi.road_nm_bubun AS roadNmBubun, <!-- 도로명 부번 -->
+		hi.apt_nm AS aptNm,             <!-- 아파트 이름 -->
+		hi.build_year AS buildYear,     <!-- 건축년도 -->
+		hi.latitude AS latitude,        <!-- 위도 -->
+		hi.longitude AS longitude       <!-- 경도 -->
+		FROM houseinfos hi
+		WHERE hi.apt_nm LIKE CONCAT('%', #{aptName}, '%')
+		ORDER BY hi.apt_nm;
 	</select>
-	
+
 	<!-- aptSeq로 아파트 정보 조회 -->
 	<select id="getHouseInfoByAptSeq" parameterType="string"
 		resultType="com.ssafy.house.model.HouseInfoDto">
@@ -58,14 +67,16 @@
 		road_nm AS roadNm,
 		road_nm_bonbun AS roadNmBonbun,
 		road_nm_bubun AS roadNmBubun,
-		apt_nm AS aptNm,
+		apt_nm AS
+		aptNm,
 		build_year AS buildYear,
 		latitude,
 		longitude
 		FROM houseinfos
-		WHERE apt_seq = #{aptSeq}
+		WHERE
+		apt_seq = #{aptSeq}
 	</select>
-	
+
 	<!-- 동별 거래 년도 조회 -->
 	<select id="getHouseDealYearByDong" parameterType="map"
 		resultType="Integer">
@@ -73,28 +84,34 @@
 		distinct(deal_year) AS deal_year
 		FROM housedeals hd
 		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-		JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
+		JOIN dongcodes dc ON
+		hi.umd_nm = dc.dong_name
 		WHERE dc.sido_name = #{sido}
-		AND dc.gugun_name = #{gugun}
+		AND dc.gugun_name
+		= #{gugun}
 		AND dc.dong_name = #{dong}
-		AND CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+		AND CONCAT(hi.sgg_cd, hi.umd_cd) =
+		dc.dong_code
 		ORDER BY deal_year;
 	</select>
-	
+
 	<!-- 거래 년도 별 월 조회 -->
 	<select id="getHouseDealMonthByYear" parameterType="map"
 		resultType="Integer">
-			SELECT
-			distinct(deal_month) AS deal_month
-			FROM housedeals hd
-			JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-			JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
-			WHERE dc.sido_name =  #{sido}
-			AND dc.gugun_name = #{gugun}
-			AND dc.dong_name = #{dong}
-			AND CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
-			AND hd.deal_year = #{year}
-			ORDER BY deal_month;
+		SELECT
+		distinct(deal_month) AS deal_month
+		FROM housedeals hd
+		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+		JOIN dongcodes dc ON
+		hi.umd_nm = dc.dong_name
+		WHERE dc.sido_name = #{sido}
+		AND dc.gugun_name
+		= #{gugun}
+		AND dc.dong_name = #{dong}
+		AND CONCAT(hi.sgg_cd, hi.umd_cd) =
+		dc.dong_code
+		AND hd.deal_year = #{year}
+		ORDER BY deal_month;
 	</select>
-	
+
 </mapper>

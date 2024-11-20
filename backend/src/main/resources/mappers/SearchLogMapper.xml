@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.searchlog.mapper.SearchLogMapper">
+
+	<!-- 검색 로그 저장 -->
+	<insert id="saveSearchLog"
+		parameterType="com.ssafy.searchlog.model.SearchLogDto">
+		INSERT INTO search_log (search_keyword, search_count, date)
+		VALUES (#{searchKeyword}, 1, NOW())
+		ON DUPLICATE KEY UPDATE
+		search_count = search_count + 1,
+		date = NOW();
+	</insert>
+
+	<!-- 인기 검색어 조회 -->
+	<select id="getPopularSearchKeywords" resultType="map">
+		SELECT
+		search_keyword AS keyword, search_count AS count
+		FROM search_log
+		ORDER
+		BY search_count DESC, created_at DESC
+		LIMIT #{limit};
+	</select>
+
+</mapper>

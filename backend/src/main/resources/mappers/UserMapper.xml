@@ -1,35 +1,40 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.ssafy.user.mapper.UserMapper">
 
-	<insert id="registerUser" parameterType="UserDto"
-		useGeneratedKeys="true" keyProperty="id">
-		INSERT INTO users (user_id, user_password, user_name, join_date)
-		VALUES (#{id}, #{password}, #{name}, NOW())
-	</insert>
+    <!-- 사용자 등록 -->
+    <insert id="registerUser" parameterType="UserDto"
+        useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (id, password, email, name, age, date)
+        VALUES (#{id}, #{password}, #{email}, #{name}, #{age}, NOW())
+    </insert>
 
-	<select id="searchAllUser" resultType="UserDto">
-		SELECT * FROM users ORDER BY user_id ASC;
-	</select>
+    <!-- 모든 사용자 조회 -->
+    <select id="searchAllUser" resultType="UserDto">
+        SELECT id, password, email, name, age, date
+        FROM user
+        ORDER BY id ASC;
+    </select>
 
-	<select id="searchUser" parameterType="UserDto"
-		resultType="UserDto">
-		SELECT user_id AS id, user_password AS password, user_name AS name,
-		email_domain AS email, join_date AS joinDate
-		FROM users
-		WHERE user_id = #{id} AND user_password = #{password}
-	</select>
+    <!-- 특정 사용자 조회 (로그인) -->
+    <select id="searchUser" parameterType="UserDto" resultType="UserDto">
+        SELECT id, password, email, name, age, date
+        FROM user
+        WHERE id = #{id} AND password = #{password}
+    </select>
 
-	<update id="editUser" parameterType="UserDto">
-		UPDATE users
-		SET user_password = #{password} , user_name = #{name}
-		WHERE user_id = #{id}
-	</update>
+    <!-- 사용자 정보 수정 -->
+    <update id="editUser" parameterType="UserDto">
+        UPDATE user
+        SET password = #{password}, name = #{name}, email = #{email}, age = #{age}
+        WHERE id = #{id}
+    </update>
 
-	<delete id="deleteUser" parameterType="String">
-		DELETE FROM users WHERE user_id = #{userId}
-	</delete>
+    <!-- 사용자 삭제 -->
+    <delete id="deleteUser" parameterType="String">
+        DELETE FROM user WHERE id = #{userId}
+    </delete>
 
 </mapper>

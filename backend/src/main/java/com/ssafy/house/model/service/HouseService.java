@@ -24,4 +24,5 @@ public interface HouseService {
 	
 	// 거래년도 별 월 조회
 	List<Integer> getHouseDealMonthByYear(String sido, String gugun, String dong, Integer month);
+
 }

@@ -5,6 +5,7 @@ public class UserDto {
 	private String id;
 	private String password;
 	private String name;
+	private int age;
 	private String phoneNumber;
 	private String email;
 	private String joinDate;
@@ -60,6 +61,16 @@ public class UserDto {
 	public void setEmail(String email) {
 		this.email = email;
 	}
+	
+	public int getAge() {
+        return age;
+    }
+
+    // age 필드의 setter
+    public void setAge(int age) {
+        this.age = age;
+    }
+    
 
 	public String getJoinDate() {
 		return joinDate;
