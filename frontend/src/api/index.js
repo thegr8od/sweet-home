@@ -1,5 +1,4 @@
 import axios from 'axios'
-
 import { API_BASE_URL, APT_DEAL_URL, APT_DETAIL_URL1, APT_DETAIL_URL2 } from '@/config/index.js'
 
 // axios 객체 생성
@@ -10,6 +9,22 @@ function apiInstance() {
       'Content-type': 'application/json',
     },
   })
+
+  // 요청 인터셉터
+  instance.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        const cleanToken = token.replace(/\s+/g, '')
+        config.headers.Authorization = `Bearer ${cleanToken}`
+      }
+      return config
+    },
+    (error) => {
+      return Promise.reject(error)
+    },
+  )
+
   return instance
 }
 
@@ -22,10 +37,10 @@ function houseInstance() {
   })
   return instance
 }
+
 // const KAKAO_SERVICE_KEY = process.env.VUE_APP_KAKAO_API_KEY;
-const KAKAO_SERVICE_KEY = 'f32bd5255a9a29d56ae3facd7549dc3a'
+const KAKAO_SERVICE_KEY = '56b9eb363581e27c66bd552d48937f74'
 function kakaoInstance() {
-  //console.log("kakaoInstane", KAKAO_SERVICE_KEY);
   const instance = axios.create({
     baseURL: 'https://dapi.kakao.com/v2/local',
     headers: {
@@ -46,6 +61,7 @@ function detailInstance1() {
   })
   return instance
 }
+
 function detailInstance2() {
   const instance = axios.create({
     baseURL: APT_DETAIL_URL2 + '?serviceKey=' + SERVICE_KEY,

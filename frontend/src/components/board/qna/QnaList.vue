@@ -1,137 +1,313 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { apiInstance } from '@/api/index.js';
+
+const api = apiInstance();
+const qnaList = ref([]);
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const expandedIdx = ref(null); // 현재 펼쳐진 질문의 idx
+
+const props = defineProps({
+  isAdmin: {
+    type: Boolean,
+    default: false
+  }
+});
+
+// 현재 로그인한 사용자 ID (실제로는 store에서 가져와야 함)
+const currentUserId = ref('user1'); // 테스트용
+
+// 수정 모드 상태 관리
+const editMode = ref(null);
+const editContent = ref('');
+
+// 게시글 수정
+const startEdit = (qna) => {
+  editMode.value = qna.idx;
+  editContent.value = qna.content;
+};
+
+const cancelEdit = () => {
+  editMode.value = null;
+  editContent.value = '';
+};
+
+const saveEdit = async (qna) => {
+  try {
+    await api.put(`/qna/update/${qna.idx}`, {
+      content: editContent.value
+    });
+    await fetchQnaList();
+    editMode.value = null;
+  } catch (error) {
+    console.error('질문 수정 실패:', error);
+    alert('수정에 실패했습니다.');
+  }
+};
+
+// 게시글 삭제
+const deleteQuestion = async (idx) => {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  try {
+    await api.delete(`/qna/delete/${idx}`);
+    await fetchQnaList();
+  } catch (error) {
+    console.error('질문 삭제 실패:', error);
+    alert('삭제에 실패했습니다.');
+  }
+};
+
+// 작성자 본인 확인
+const isAuthor = (userid) => {
+  return currentUserId.value === userid;
+};
+
+// 정렬된 리스트 계산
+const sortedQnaList = computed(() => {
+  return [...qnaList.value].sort((a, b) => b.idx - a.idx); // 번호 내림차순 정렬
+});
+
+// 현재 페이지 아이템
+const currentItems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return sortedQnaList.value.slice(start, end);
+});
+
+// 전체 페이지 수
+const totalPages = computed(() => {
+  return Math.ceil(sortedQnaList.value.length / itemsPerPage);
+});
+
+const fetchQnaList = async () => {
+  try {
+    const response = await api.get('/qna/list');
+    qnaList.value = response.data;
+  } catch (error) {
+    console.error('QnA 목록 조회 실패:', error);
+  }
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  } catch (error) {
+    return '-';
+  }
+};
+
+const changePage = (page) => {
+  currentPage.value = page;
+};
+
+const toggleQuestion = (idx) => {
+  expandedIdx.value = expandedIdx.value === idx ? null : idx;
+};
+
+const submitAnswer = async (questionIdx) => {
+  if (!props.isAdmin) {
+    alert('관리자만 답변을 등록할 수 있습니다.');
+    return;
+  }
+
+  try {
+    await api.post('/qna/answer', {
+      idx: questionIdx,
+      answer: newAnswer.value
+    });
+    newAnswer.value = ''; // 입력 필드 초기화
+    await fetchQnaList(); // 목록 새로고침
+  } catch (error) {
+    console.error('답변 등록 실패:', error);
+    alert('답변 등록에 실패했습니다.');
+  }
+};
+
+const deleteAnswer = async (questionIdx) => {
+  if (!props.isAdmin) {
+    alert('관리자만 답변을 삭제할 수 있습니다.');
+    return;
+  }
+
+  if (!confirm('답변을 삭제하시겠습니까?')) return;
+
+  try {
+    await api.delete(`/qna/delete-answer/${questionIdx}`);
+    await fetchQnaList();
+  } catch (error) {
+    console.error('답변 삭제 실패:', error);
+    alert('답변 삭제에 실패했습니다.');
+  }
+};
+
+// admin 체크를 위한 computed 속성 수정
+const isAdmin = computed(() => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  return userInfo.userid === 'admin'; // userid로 수정
+});
+
+onMounted(() => {
+  fetchQnaList();
+});
+
+defineExpose({
+  fetchQnaList
+});
+</script>
+
 <template>
-  <div class="max-w-5xl w-full mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-center mb-8">Q&A</h1>
-
-    <!-- Categories -->
-    <div class="flex justify-center space-x-8 mb-8">
-      <a
-        v-for="category in categories"
-        :key="category.name"
-        :href="category.href"
-        :class="[
-          'text-sm',
-          category.active ? 'text-black border-b-2 border-black' : 'text-gray-500 hover:text-black',
-        ]"
-      >
-        {{ category.name }}
-      </a>
-    </div>
-
-    <!-- Posts Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-y border-gray-200">
-            <th class="py-4 text-left w-16">No</th>
-            <th class="py-4 text-left">제목</th>
-            <th class="py-4 text-left w-24">글쓴이</th>
-            <th class="py-4 text-left w-24">작성시간</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="post in posts" :key="post.id" class="border-b border-gray-200">
-            <td class="py-4">{{ post.id }}</td>
-            <td class="py-4">
-              <div class="flex items-center space-x-2">
-                <LockIcon v-if="post.locked" class="w-4 h-4 text-gray-400" />
-                <span :class="{ 'font-medium': post.notice }">
-                  {{ post.title }}
-                </span>
-              </div>
-            </td>
-            <td class="py-4">{{ post.author }}</td>
-            <td class="py-4 text-gray-500">{{ post.date }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Search and Write -->
-    <div class="flex justify-between items-center mt-6">
-      <div class="relative flex-1 max-w-sm">
-        <SearchIcon
-          class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-        />
-        <input
-          type="text"
-          placeholder="Search"
-          class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+  <div class="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase">
+        <div class="col-span-1 text-center">번호</div>
+        <div class="col-span-6">제목</div>
+        <div class="col-span-2 text-center">작성자</div>
+        <div class="col-span-2 text-center">작성일</div>
+        <div class="col-span-1 text-center">상태</div>
       </div>
-      <router-link
-        to="/write"
-        class="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-      >
-        글쓰기
-      </router-link>
+    </div>
+
+    <div class="divide-y divide-gray-200">
+      <div v-for="qna in currentItems" :key="qna.idx" class="transition-colors">
+        <div @click="toggleQuestion(qna.idx)" :class="[
+          'px-6 py-4 grid grid-cols-12 gap-4 cursor-pointer items-center',
+          expandedIdx === qna.idx ? 'bg-blue-50' : 'hover:bg-gray-50'
+        ]">
+          <div class="col-span-1 text-center text-gray-500">{{ qna.idx }}</div>
+          <div class="col-span-6">
+            <div class="text-gray-900 font-medium">{{ qna.title }}</div>
+          </div>
+          <div class="col-span-2 text-center text-gray-500">{{ qna.userid }}</div>
+          <div class="col-span-2 text-center text-gray-500">{{ formatDate(qna.date) }}</div>
+          <div class="col-span-1 text-center">
+            <span :class="[
+              'px-2 py-1 rounded-full text-xs font-medium',
+              qna.answer
+                ? 'bg-green-100 text-green-800'
+                : 'bg-yellow-100 text-yellow-800'
+            ]">
+              {{ qna.answer ? '답변완료' : '답변대기' }}
+            </span>
+          </div>
+        </div>
+
+        <div v-show="expandedIdx === qna.idx" class="px-6 py-4 bg-blue-50">
+          <div class="bg-white rounded-lg p-6 shadow-sm">
+            <div class="mb-6">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                  <span class="text-blue-600 font-medium">Q</span>
+                </div>
+                <div class="flex-grow">
+                  <div class="text-gray-900 whitespace-pre-wrap">{{ qna.content }}</div>
+                  <div class="text-sm text-gray-500 mt-2">
+                    {{ qna.userid }} | {{ formatDate(qna.date) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 border-t border-gray-100 pt-6">
+              <div v-if="qna.answer" class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <span class="text-green-600 font-medium">A</span>
+                </div>
+                <div class="flex-grow">
+                  <div class="text-gray-900 whitespace-pre-wrap">{{ qna.answer }}</div>
+                  <div class="flex justify-between items-center mt-2">
+                    <div class="text-sm text-gray-500">
+                      관리자 | {{ formatDate(qna.answer_date) }}
+                    </div>
+                    <button
+                      v-if="isAdmin"
+                      @click.stop="deleteAnswer(qna.idx)"
+                      class="text-sm text-red-600 hover:text-red-800"
+                    >
+                      답변 삭제
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="isAdmin" class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <span class="text-green-600 font-medium">A</span>
+                </div>
+                <div class="flex-grow">
+                  <textarea
+                    v-model="newAnswer"
+                    placeholder="답변을 입력하세요"
+                    class="w-full p-4 border rounded-lg h-32 mb-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  ></textarea>
+                  <div class="flex justify-end">
+                    <button
+                      @click="submitAnswer(qna.idx)"
+                      class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      답변 등록
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="text-center text-gray-500 py-4">
+                답변 대기중입니다.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="totalPages > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-center gap-2">
+      <button v-if="currentPage > 1" @click="changePage(currentPage - 1)" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 text-sm text-gray-600 transition-colors duration-150">
+        이전
+      </button>
+      <button v-for="page in totalPages" :key="page" @click="changePage(page)" :class="[
+        'px-3 py-1 rounded border text-sm transition-colors duration-150',
+        currentPage === page
+          ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      ]">
+        {{ page }}
+      </button>
+      <button v-if="currentPage < totalPages" @click="changePage(currentPage + 1)" class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 text-sm text-gray-600 transition-colors duration-150">
+        다음
+      </button>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { LockIcon, SearchIcon } from 'lucide-vue-next'
-
-const categories = ref([
-  { name: 'NOTICE', href: '#' },
-  { name: 'FAQ', href: '#' },
-  { name: 'Q&A', href: '#', active: true },
-  { name: '1:1 문의', href: '#' },
-  { name: 'CLASS', href: '#' },
-  { name: '입고정보', href: '#' },
-])
-
-const posts = ref([
-  {
-    id: 17,
-    title: '2021년 입고정보게시판 신설',
-    author: 'PLIPOP',
-    date: '2021-01-26',
-    notice: true,
-  },
-  { id: 16, title: '신상입고 기대합니다!', author: 'PLIPOP', date: '2021-01-26', locked: true },
-  { id: 15, title: '무통장입금 가능한가요?', author: 'PLIPOP', date: '2021-01-26', locked: true },
-  {
-    id: 14,
-    title: '신상입고 언제 되요? ㅠㅠㅠㅠ',
-    author: 'PLIPOP',
-    date: '2021-01-26',
-    locked: true,
-  },
-  {
-    id: 13,
-    title: '친절한 응대 감사합니다 ^^',
-    author: 'PLIPOP',
-    date: '2021-01-26',
-    locked: true,
-  },
-  {
-    id: 12,
-    title: '프로모션으로 상품을 구매했는데요.',
-    author: 'PLIPOP',
-    date: '2021-01-26',
-    locked: true,
-  },
-  { id: 11, title: '배송 언제 되나요?', author: 'PLIPOP', date: '2021-01-26', locked: true },
-  { id: 10, title: '새상품 입고 언제 되나요?', author: 'PLIPOP', date: '2021-01-26', locked: true },
-  {
-    id: 9,
-    title: '스키니진 블루블랙 언제 입고되나요?',
-    author: 'PLIPOP',
-    date: '2021-01-26',
-    locked: true,
-  },
-  { id: 8, title: '[문의] 문의드립니다.', author: '익명', date: '2019-09-24', locked: true },
-  {
-    id: 7,
-    title: '이거 이름을 모르겠는데 재입고 언제 되나요?',
-    author: '익명',
-    date: '2019-09-24',
-    locked: true,
-  },
-])
-</script>
-
 <style scoped>
-/* 추가적인 스타일이 필요한 경우 여기에 작성하세요 */
+.expanded-content {
+  max-height: 1000px;
+  transition: all 0.3s ease-in-out;
+}
+
+.collapsed-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .grid-cols-12 {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .col-span-1 {
+    grid-column: span 1;
+  }
+
+  .col-span-6 {
+    grid-column: span 2;
+  }
+
+  .col-span-2 {
+    display: none;
+  }
+}
 </style>

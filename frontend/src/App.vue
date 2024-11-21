@@ -13,6 +13,29 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import NavBar from './components/layout/NavBar.vue'
+import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { apiInstance } from '@/api/index'
+
+const api = apiInstance()
+const userStore = useUserStore()
+
+onMounted(async () => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    try {
+      const response = await api.get('/user/info', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      userStore.setUserInfo(response.data)
+    } catch (error) {
+      console.error('자동 로그인 실패:', error)
+      userStore.clearUserInfo()
+    }
+  }
+})
 </script>
 
 <style scoped>

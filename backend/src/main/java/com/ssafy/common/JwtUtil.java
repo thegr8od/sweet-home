@@ -3,6 +3,7 @@ package com.ssafy.common;
 import java.security.Key;
 import java.util.Date;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -23,13 +24,20 @@ public class JwtUtil {
     // 토큰 검증
     public static String validateToken(String token) {
         try {
-            return Jwts.parserBuilder()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
+                    .getBody();
+                    
+            // 토큰 만료 검사
+            if (claims.getExpiration().before(new Date())) {
+                return null;
+            }
+            
+            return claims.getSubject();
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }

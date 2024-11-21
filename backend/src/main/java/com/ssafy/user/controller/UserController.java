@@ -42,25 +42,58 @@ public class UserController {
 
     @PostMapping("/update")
     @Operation(summary = "사용자 정보 업데이트", description = "JWT 토큰을 사용하여 사용자 정보 수정")
-    public ResponseEntity<?> updateUser(@RequestBody UserDto user, @RequestHeader("Authorization") String token)
+    public ResponseEntity<?> updateUser(@RequestBody UserDto user, @RequestHeader("Authorization") String authHeader)
             throws Exception {
-        String userId = JwtUtil.validateToken(token);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+        try {
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 형식이 잘못되었습니다.");
+            }
+
+            String token = authHeader.substring(7); // "Bearer " 제거
+            String userId = JwtUtil.validateToken(token);
+            
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+            }
+
+            // 토큰의 사용자 ID와 요청의 사용자 ID가 일치하는지 확인
+            if (!userId.equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("권한이 없습니다.");
+            }
+
+            userService.editUser(user);
+            return ResponseEntity.ok("사용자 정보가 업데이트되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
         }
-        userService.editUser(user);
-        return ResponseEntity.ok("사용자 정보가 업데이트되었습니다.");
     }
 
     @PostMapping("/delete")
     @Operation(summary = "사용자 삭제", description = "JWT 토큰을 사용하여 사용자 삭제")
-    public ResponseEntity<?> deleteUser(@RequestHeader("Authorization") String token) throws Exception {
-        String userId = JwtUtil.validateToken(token);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+    public ResponseEntity<?> deleteUser(@RequestHeader("Authorization") String authHeader) throws Exception {
+        try {
+            if (!authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 형식이 잘못되었습니다.");
+            }
+
+            String token = authHeader.substring(7); // "Bearer " 제거
+            String userId = JwtUtil.validateToken(token);
+            
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+            }
+
+            int result = userService.deleteUser(userId);
+            if (result > 0) {
+                return ResponseEntity.ok("사용자가 삭제되었습니다.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
         }
-        userService.deleteUser(userId);
-        return ResponseEntity.ok("사용자가 삭제되었습니다.");
     }
 
     @PostMapping("/create")
@@ -68,5 +101,34 @@ public class UserController {
     public ResponseEntity<?> createUser(@RequestBody UserDto user) throws Exception {
         userService.registerUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body("사용자가 생성되었습니다.");
+    }
+    
+    @GetMapping("/info")
+    @Operation(summary = "사용자 정보 조회", description = "JWT 토큰을 사용하여 사용자 정보 조회")
+    public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String authHeader) throws Exception {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰이 없거나 형식이 잘못되었습니다.");
+            }
+
+            String token = authHeader.substring(7); // "Bearer " 제거
+            String userId = JwtUtil.validateToken(token);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+            }
+
+            UserDto user = userService.searchUserById(userId);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+            }
+
+            // 비밀번호는 제외하고 반환
+            user.setPassword(null);
+            return ResponseEntity.ok(user);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
     }
 }

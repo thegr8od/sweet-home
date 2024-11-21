@@ -14,5 +14,6 @@ public interface UserMapper {
 	List<UserDto> searchAllUser() throws SQLException;
 	UserDto searchUser(UserDto userDto) throws SQLException;
 	void editUser(UserDto userDto) throws SQLException;
+	UserDto searchUserById(String userId) throws SQLException;
 	int deleteUser(String userId) throws SQLException;
 }

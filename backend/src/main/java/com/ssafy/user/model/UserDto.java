@@ -9,6 +9,8 @@ public class UserDto {
 	private String phoneNumber;
 	private String email;
 	private String joinDate;
+	private boolean isDeleted;
+	private String deletedAt;
 
 	public UserDto() {
 	}
@@ -20,6 +22,22 @@ public class UserDto {
 		this.phoneNumber = phoneNumber;
 		this.email = email;
 		this.joinDate = joinDate;
+	}
+
+	public boolean isDeleted() {
+		return isDeleted;
+	}
+
+	public void setDeleted(boolean isDeleted) {
+		this.isDeleted = isDeleted;
+	}
+
+	public String getDeletedAt() {
+		return deletedAt;
+	}
+
+	public void setDeletedAt(String deletedAt) {
+		this.deletedAt = deletedAt;
 	}
 
 	public String getId() {
@@ -61,16 +79,15 @@ public class UserDto {
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	
-	public int getAge() {
-        return age;
-    }
 
-    // age 필드의 setter
-    public void setAge(int age) {
-        this.age = age;
-    }
-    
+	public int getAge() {
+		return age;
+	}
+
+	// age 필드의 setter
+	public void setAge(int age) {
+		this.age = age;
+	}
 
 	public String getJoinDate() {
 		return joinDate;

@@ -15,4 +15,6 @@ public interface UserService {
 	UserDto searchUser(UserDto userDto) throws Exception;
 
 	int deleteUser(String userId) throws Exception;
+	
+	UserDto searchUserById(String userId) throws Exception;
 }

@@ -11,25 +11,26 @@
         <h2 class="text-2xl font-medium text-gray-900 mb-8">로그인</h2>
 
         <form class="space-y-6" @submit.prevent="handleSubmit">
-          <!-- Email/Username Input -->
+          <!-- ID Input -->
           <div>
             <div class="relative">
               <input
-                v-model="form.email"
+                v-model="form.id"
+                type="text"
                 :class="[
                   'w-full px-3 py-3 border rounded-md',
                   'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                  errors.email ? 'border-red-300' : 'border-gray-300',
+                  errors.id ? 'border-red-300' : 'border-gray-300',
                 ]"
                 :disabled="isLoading"
-                placeholder="이메일 주소를 입력해주세요"
-                @blur="validateEmail"
+                placeholder="아이디를 입력해주세요"
+                @blur="validateId"
               />
-              <div v-if="errors.email" class="absolute right-0 top-0 pr-3 flex items-center h-full">
+              <div v-if="errors.id" class="absolute right-0 top-0 pr-3 flex items-center h-full">
                 <AlertCircle class="h-5 w-5 text-red-500" />
               </div>
             </div>
-            <p v-if="errors.email" class="mt-1 text-sm text-red-500">{{ errors.email }}</p>
+            <p v-if="errors.id" class="mt-1 text-sm text-red-500">{{ errors.id }}</p>
           </div>
 
           <!-- Password Input -->
@@ -101,7 +102,9 @@
           <div class="text-center mt-4">
             <p class="text-sm text-gray-600">
               아직 SWEET HOME 회원이 아니신가요?
-              <a href="#" class="text-blue-600 hover:text-blue-500 font-medium"> 회원가입 </a>
+              <router-link to="/register" class="text-blue-600 hover:text-blue-500 font-medium">
+                회원가입
+              </router-link>
             </p>
           </div>
         </form>
@@ -124,47 +127,49 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { apiInstance } from '@/api/index'
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-vue-next'
+
+const api = apiInstance()
+const router = useRouter()
+const userStore = useUserStore()
 
 const isLoading = ref(false)
 const showPassword = ref(false)
 const loginError = ref('')
 
 const form = ref({
-  email: '',
+  id: '',
   password: '',
   rememberMe: false,
 })
 
 const errors = ref({
-  email: '',
+  id: '',
   password: '',
 })
 
 // Validation functions
-const validateEmail = () => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!form.value.email) {
-    errors.value.email = '이메일을 입력해주세요.'
-  } else if (!emailRegex.test(form.value.email)) {
-    errors.value.email = '올바른 이메일 형식이 아닙니다.'
+const validateId = () => {
+  if (!form.value.id) {
+    errors.value.id = '아이디를 입력해주세요.'
   } else {
-    errors.value.email = ''
+    errors.value.id = ''
   }
 }
 
 const validatePassword = () => {
   if (!form.value.password) {
     errors.value.password = '비밀번호를 입력해주세요.'
-  } else if (form.value.password.length < 8) {
-    errors.value.password = '비밀번호는 8자 이상이어야 합니다.'
   } else {
     errors.value.password = ''
   }
 }
 
 const isFormValid = computed(() => {
-  return form.value.email && form.value.password && !errors.value.email && !errors.value.password
+  return form.value.id && form.value.password && !errors.value.id && !errors.value.password
 })
 
 const togglePasswordVisibility = () => {
@@ -172,7 +177,7 @@ const togglePasswordVisibility = () => {
 }
 
 const handleSubmit = async () => {
-  validateEmail()
+  validateId()
   validatePassword()
 
   if (!isFormValid.value) return
@@ -181,20 +186,27 @@ const handleSubmit = async () => {
     isLoading.value = true
     loginError.value = ''
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const response = await api.post('/user/login', {
+      id: form.value.id,
+      password: form.value.password,
+    })
 
-    // Simulated API error for demonstration
-    if (Math.random() > 0.5) {
-      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.')
+    if (response.data) {
+      localStorage.setItem('token', response.data)
+
+      const userResponse = await api.get('/user/info', {
+        headers: {
+          Authorization: `Bearer ${response.data}`,
+        },
+      })
+
+      userStore.setUserInfo(userResponse.data)
+
+      router.push('/')
     }
-
-    // Success - you would typically handle the login response here
-    console.log('Login successful', form.value)
-
-    // Redirect or handle successful login
   } catch (error) {
-    loginError.value = error.message
+    console.error('로그인 실패:', error)
+    loginError.value = '아이디 또는 비밀번호가 올바르지 않습니다.'
   } finally {
     isLoading.value = false
   }

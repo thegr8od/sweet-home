@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Register from '@/components/user/Register.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,6 +40,17 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
+    },
+    {
+      path: '/mypage',
+      name: 'MyPage',
+      component: () => import('@/components/user/MyPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: Register,
     },
   ],
 })

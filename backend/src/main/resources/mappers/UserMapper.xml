@@ -4,37 +4,58 @@
 
 <mapper namespace="com.ssafy.user.mapper.UserMapper">
 
-    <!-- 사용자 등록 -->
-    <insert id="registerUser" parameterType="UserDto"
-        useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user (id, password, email, name, age, date)
-        VALUES (#{id}, #{password}, #{email}, #{name}, #{age}, NOW())
-    </insert>
+	<!-- 사용자 등록 -->
+	<insert id="registerUser" parameterType="UserDto"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO user (id, password,
+		email, name, age, date)
+		VALUES (#{id}, #{password}, #{email}, #{name},
+		#{age}, NOW())
+	</insert>
 
-    <!-- 모든 사용자 조회 -->
-    <select id="searchAllUser" resultType="UserDto">
-        SELECT id, password, email, name, age, date
-        FROM user
-        ORDER BY id ASC;
-    </select>
+	<!-- 모든 사용자 조회 -->
+	<select id="searchAllUser" resultType="UserDto">
+		SELECT id, password,
+		email, name, age, date
+		FROM user
+		ORDER BY id ASC;
+	</select>
 
-    <!-- 특정 사용자 조회 (로그인) -->
-    <select id="searchUser" parameterType="UserDto" resultType="UserDto">
-        SELECT id, password, email, name, age, date
-        FROM user
-        WHERE id = #{id} AND password = #{password}
-    </select>
+	<!-- 사용자 조회 시 삭제되지 않은 사용자만 조회 -->
+	<select id="searchUser" parameterType="UserDto"
+		resultType="UserDto">
+		SELECT id, password, email, name, age, date
+		FROM user
+		WHERE
+		id = #{id}
+		AND password = #{password}
+		AND is_deleted = FALSE
+	</select>
 
-    <!-- 사용자 정보 수정 -->
-    <update id="editUser" parameterType="UserDto">
-        UPDATE user
-        SET password = #{password}, name = #{name}, email = #{email}, age = #{age}
-        WHERE id = #{id}
-    </update>
+	<!-- 사용자 정보 수정 -->
+	<update id="editUser" parameterType="UserDto">
+		UPDATE user
+		SET password =
+		#{password}, name = #{name}, email = #{email}, age =
+		#{age}
+		WHERE id =
+		#{id}
+	</update>
 
-    <!-- 사용자 삭제 -->
-    <delete id="deleteUser" parameterType="String">
-        DELETE FROM user WHERE id = #{userId}
-    </delete>
+	<!-- 사용자 삭제 -->
+	<update id="deleteUser" parameterType="String">
+		UPDATE user
+		SET is_deleted
+		= TRUE,
+		deleted_at = NOW()
+		WHERE id = #{userId}
+	</update>
 
+	<select id="searchUserById" parameterType="String"
+		resultType="UserDto">
+		SELECT id, password, email, name, age, date as joinDate
+		FROM user
+		WHERE id = #{userId}
+		AND is_deleted = FALSE
+	</select>
 </mapper>
