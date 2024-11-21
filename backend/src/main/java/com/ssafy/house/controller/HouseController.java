@@ -33,7 +33,7 @@ public class HouseController {
         this.houseService = houseService;
     }
 
-    @GetMapping("/houseDealListByAddress")
+    @GetMapping("/deal/address")
     @Operation(summary = "아파트 실거래 정보 조회", description = "동/거래년도/월을 기준으로 아파트 실거래 정보 조회")
     public ResponseEntity<List<HouseDealSimpleResponseDto>> getHouseDealListByAddress(
             @RequestParam String sido,
@@ -47,6 +47,19 @@ public class HouseController {
         }
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+    
+    
+    @GetMapping("/deal/apt")
+    @Operation(summary = "아파트 실거래 정보 조회", description = "아파트 고유번호(aptSeq)를 기준으로 실거래 정보 조회")
+    public ResponseEntity<List<HouseDealResponseDto>> getHouseDealListByAptSeq(
+        @RequestParam String aptSeq) {
+        List<HouseDealResponseDto> result = houseService.getDealsByAptSeq(aptSeq);
+        if (result.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+    
 
     @GetMapping("/location")
     @Operation(summary = "지역 정보 조회", description = "시도/구군/동 정보를 조회")

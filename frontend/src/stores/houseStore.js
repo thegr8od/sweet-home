@@ -1,6 +1,6 @@
 // stores/houseStore.js
 import { defineStore } from 'pinia'
-import { houseDealListByAddress } from '@/api/house.js'
+import { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq } from '@/api/house.js'
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -9,124 +9,112 @@ export const useHouseStore = defineStore('houseStore', {
     markerPositions: [],
     selectedPosition: null,
     showDetail: false,
+    aptInfo: null,
+    aptDeals: [],
+    none: true,
   }),
 
   actions: {
-    async getHouseListByAddress(address) {
+    async getHouseDealsByAddress(address) {
       try {
-        this.houses = []
-        this.markerPositions = []
-        this.selectedPosition = null
-
-        await houseDealListByAddress(
-          address,
-          (response) => {
-            // success callback
-            const data = response.data
-            this.houses = data
-            this.markerPositions = data
-              .filter((house) => house.latitude && house.longitude)
-              .map((house) => {
-                const lat = parseFloat(house.latitude)
-                const lng = parseFloat(house.longitude)
-                if (isNaN(lat) || isNaN(lng)) return null
-                return [lat, lng]
-              })
-              .filter((position) => position !== null)
-            console.log('houses:', this.houses)
-            console.log('markerPositions:', this.markerPositions)
-          },
-          (error) => {
-            // error callback
-            console.error('Error fetching house list by address:', error)
-            this.houses = []
-            this.markerPositions = []
-          },
-        )
+        const response = await new Promise((resolve, reject) => {
+          houseDealListByAddress(address, resolve, reject)
+        })
+        return response.data
       } catch (error) {
-        console.error('Error in getHouseListByAddress:', error)
-        this.houses = []
-        this.markerPositions = []
+        console.error('Error in getHouseDealsByAddress:', error)
+        return []
       }
     },
 
-    // async getHouseList(dongName) {
-    //   const params = { dongName }
-    //   try {
-    //     const { data } = await houseList(params)
-    //     this.houses = data
-    //     this.markerPositions = data.map((house) => [house.lat, house.lng])
-    //   } catch (error) {
-    //     console.error('Error fetching house list', error)
-    //   }
-    // },
+    async getAptInfo(aptSeq) {
+      try {
+        console.log('aptSeq:', aptSeq)
+        await getHouseInfoByAptSeq(
+          aptSeq,
+          (response) => {
+            this.aptInfo = response.data
+            console.log('Apartment Info:', response.data)
+          },
+          (error) => {
+            console.error('Error fetching house details:', error)
+            this.aptInfo = null
+          },
+        )
+      } catch (error) {
+        console.error('Error in getAptInfo:', error)
+        this.aptInfo = null
+      }
+    },
 
-    // async detailHouse(house) {
-    //   this.house = house
-    //   const params = { aptCode: house.aptCode }
-    //   try {
-    //     const { data } = await housDeal(params)
-    //     this.deals = data
-    //     this.none = false
-    //   } catch (error) {
-    //     console.error('Error fetching house deal details', error)
-    //   }
-    // },
+    async getAptDeals(aptSeq) {
+      try {
+        console.log('aptSeq:', aptSeq)
+        await houseDealListByAptSeq(
+          aptSeq,
+          (response) => {
+            this.aptDeals = response.data
+            console.log('Apartment Deals:', response.data)
+          },
+          (error) => {
+            console.error('Error fetching house deals:', error)
+            this.aptDeals = []
+          },
+        )
+      } catch (error) {
+        console.error('Error in getAptDeals:', error)
+        this.aptDeals = []
+      }
+    },
 
-    // setNoneFalse(data) {
-    //   this.none = data
-    // },
+    async getDetail(aptSeq) {
+      try {
+        console.log('상세정보 조회 aptSeq:', aptSeq)
+        // 아파트 정보와 거래 내역을 순차적으로 조회
+        await this.getAptInfo(aptSeq)
+        await this.getAptDeals(aptSeq)
+      } catch (error) {
+        console.error('아파트 상세 정보 조회 실패:', error)
+      }
+    },
 
-    // async addressHouse(data) {
-    //   const params = {
-    //     pa: data.pa,
-    //     qa: data.qa,
-    //     ha: data.ha,
-    //     oa: data.oa,
-    //   }
-    //   try {
-    //     const { data } = await houseAddress(params)
-    //     this.houses = data
-    //     this.markerPositions = data.map((house) => [house.lat, house.lng])
-    //   } catch (error) {
-    //     console.error('Error fetching house address', error)
-    //   }
-    // },
+    async getHouseListByAddress(address) {
+      this.clearHouses()
 
-    // async getNameList(data) {
-    //   const params = { apartmentName: data }
-    //   try {
-    //     const { data } = await houseName(params)
-    //     this.houses = data
-    //     this.markerPositions = data.map((house) => [house.lat, house.lng])
-    //   } catch (error) {
-    //     console.error('Error fetching house name list', error)
-    //   }
-    // },
+      try {
+        const data = await this.getHouseDealsByAddress(address)
+        this.houses = data
+        this.markerPositions = data
+          .filter((house) => house.latitude && house.longitude)
+          .map((house) => {
+            const lat = parseFloat(house.latitude)
+            const lng = parseFloat(house.longitude)
+            if (isNaN(lat) || isNaN(lng)) return null
+            return [lat, lng]
+          })
+          .filter((position) => position !== null)
+        console.log('houses:', this.houses)
+        console.log('markerPositions:', this.markerPositions)
+      } catch (error) {
+        console.error('Error fetching house list by address:', error)
+        this.clearHouses()
+      }
+    },
 
-    //   async getDetail(houseinfo) {
-    //     try {
-    //       const { data } = await getKapt(houseinfo)
-    //       const params = { kaptCode: data.data }
-
-    //       const [detail1Data, detail2Data] = await Promise.all([
-    //         houseDetail1(params),
-    //         houseDetail2(params),
-    //       ])
-
-    //       this.detail1 = detail1Data.response.body.item
-    //       this.detail2 = detail2Data.response.body.item
-    //     } catch (error) {
-    //       console.error('Error fetching house details', error)
-    //     }
-    //   },
-
-    setSelectedPosition(house) {
-      if (house && house.latitude && house.longitude) {
-        this.selectedPosition = {
-          lat: parseFloat(house.latitude),
-          lng: parseFloat(house.longitude),
-        }
+    setSelectedPosition(position) {
+      this.selectedPosition = position
+      const selectedHouse = this.houses.find(
+        (house) =>
+          parseFloat(house.latitude) === position.lat &&
+          parseFloat(house.longitude) === position.lng,
+      )
+      if (selectedHouse) {
+        console.log('Selected House:', {
+          aptName: selectedHouse.aptName,
+          legalDong: selectedHouse.legalDong,
+          latitude: selectedHouse.latitude,
+          longitude: selectedHouse.longitude,
+        })
       }
     },
 
@@ -137,7 +125,16 @@ export const useHouseStore = defineStore('houseStore', {
 
     closeDetail() {
       this.showDetail = false
+    },
+
+    clearHouses() {
+      this.houses = []
+      this.markerPositions = []
+      this.selectedPosition = null
       this.selectedHouse = null
+      this.showDetail = false
+      this.aptInfo = null
+      this.aptDeals = []
     },
   },
 })

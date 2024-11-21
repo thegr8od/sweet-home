@@ -6,9 +6,9 @@
     @mouseout="colorChange(false)"
     :class="{ 'mouse-over-bgcolor': isColor }"
   >
-    <div class="apt-icon-div">
+    <!-- <div class="apt-icon-div">
       <b-icon-house-door-fill class="apt-icon" />
-    </div>
+    </div> -->
     <div class="apt-info-div">
       <div class="apt-name">[{{ house.legalDong }}] {{ house.aptName }}</div>
     </div>
@@ -48,22 +48,26 @@ export default {
     selectHouse() {
       console.log('Selected house:', this.house)
 
-      this.houseStore.setSelectedHouse(this.house)
-
       if (this.house.latitude && this.house.longitude) {
-        this.houseStore.setSelectedPosition({
+        const position = {
           lat: parseFloat(this.house.latitude),
           lng: parseFloat(this.house.longitude),
-        })
+        }
+        this.houseStore.setSelectedPosition(position)
+      }
+
+      this.houseStore.setSelectedHouse(this.house)
+
+      console.log('this.house.aptSeq:', this.house.aptSeq)
+      if (this.house.aptSeq) {
+        this.houseStore.getDetail({ aptSeq: this.house.aptSeq })
       }
 
       if (this.house.roadName) {
         this.houseinfo.roadName = this.house.roadName
-
         if (this.house.roadNameBonbun) {
           this.houseinfo.roadNameBonbun = Number(this.house.roadNameBonbun).toString()
         }
-
         if (this.house.roadNameBubun) {
           this.houseinfo.roadNameBubun = Number(this.house.roadNameBubun).toString()
         }

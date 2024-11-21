@@ -72,6 +72,7 @@ export default {
           gugun: selectedGugun.value,
           dong: selectedDong.value,
         }
+        console.log('address:', address)
         await houseStore.getHouseListByAddress(address)
       }
     }

@@ -21,13 +21,19 @@ public class HouseServiceImpl implements HouseService {
 	}
 
 	@Override
-	public List<HouseDealSimpleResponseDto> getDealsByAddress(String sido, String gugun, String dong, Integer year, Integer month) {
+	public List<HouseDealSimpleResponseDto> getDealsByAddress(String sido, String gugun, String dong, Integer year,
+			Integer month) {
 		return houseMapper.getDealsByAddress(sido, gugun, dong, year, month);
 	}
 
 	@Override
-	public List<HouseDealResponseDto> getDealsByAptName(String aptName) {
-		return houseMapper.getDealsByAptName(aptName);
+	public List<HouseDealResponseDto> getDealsByAptSeq(String aptSeq) {
+		return houseMapper.getDealsByAptSeq(aptSeq);
+	}
+
+	@Override
+	public List<HouseInfoDto> getHouseInfoByAptName(String aptName) {
+		return houseMapper.getHouseInfoByAptName(aptName);
 	}
 
 	@Override

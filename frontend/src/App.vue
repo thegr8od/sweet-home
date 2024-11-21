@@ -46,13 +46,13 @@ header {
   position: fixed;
   top: 0;
   width: 100%;
-  z-index: 1000; /* navBar가 맨 위로 오도록 설정 */
+  z-index: 1000;
+  height: 60px;
 }
 
 .content {
-  /* padding: 20px; */
-  margin-top: 60px; /* navBar의 높이만큼 아래로 밀어서 겹침 방지 */
   height: calc(100vh - 60px);
+  margin-top: 60px;
 }
 
 button-group {

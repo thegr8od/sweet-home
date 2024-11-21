@@ -5,25 +5,26 @@
 
 <mapper namespace="com.ssafy.house.mapper.HouseMapper">
 
-	<!-- 동+거래년도+거래월 별 아파트 실거래 정보 조회 -->
+	<!-- 동+거래년도+거래월 별 간단한 아파트 실거래 정보 조회 -->
 	<select id="getDealsByAddress" parameterType="map"
 		resultType="com.ssafy.house.model.HouseDealSimpleResponseDto">
 		SELECT
-			hi.apt_seq AS aptSeq,
-			hi.apt_nm AS aptName,
-			MAX(hd.floor) AS floor,  <!-- 예시: 최댓값 -->
-			AVG(hd.exclu_use_ar) AS excluUseAr,  <!-- 예시: 평균값 -->
-			hi.umd_nm AS legalDong,
-			MAX(hd.deal_amount) AS tradeAmount,  <!-- 예시: 최댓값 -->
-			hi.latitude AS latitude,
-			hi.longitude AS longitude
-		FROM housedeals hd
-			JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-			JOIN dongcodes dc ON hi.umd_nm = dc.dong_name
+		hi.apt_seq AS aptSeq,
+		hi.apt_nm AS aptName,
+		hi.umd_nm AS
+		legalDong,
+		hi.latitude AS latitude,
+		hi.longitude AS longitude
+		FROM
+		housedeals hd
+		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+		JOIN
+		dongcodes dc ON hi.umd_nm = dc.dong_name
 		WHERE dc.sido_name = #{sido}
-			AND dc.gugun_name = #{gugun}
-			AND dc.dong_name = #{dong}	
-			AND CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+		AND dc.gugun_name = #{gugun}
+		AND dc.dong_name = #{dong}
+		AND
+		CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
 		<if test="year != null and year > 0">
 			AND hd.deal_year = #{year}
 		</if>
@@ -33,8 +34,29 @@
 		GROUP BY hi.apt_seq, hi.apt_nm  <!-- 아파트 이름별로 그룹화 -->
 	</select>
 
-	<!-- 특정 아파트 이름이 포함된 실거래 정보 조회 -->
-	<select id="getDealsByAptName" parameterType="String"
+	<!-- 아파트 코드로 아파트 실거래 정보 조회 -->
+	<select id="getDealsByAptSeq" parameterType="map"
+		resultType="com.ssafy.house.model.HouseDealResponseDto">
+		SELECT
+		hi.apt_seq AS aptSeq,
+		hi.apt_nm AS aptName,
+		hd.floor AS floor,
+		hd.exclu_use_ar AS excluUseAr,
+		hi.umd_nm AS legalDong,
+		hd.deal_amount AS tradeAmount,
+		hi.latitude AS latitude,
+		hi.longitude AS longitude,
+		hd.deal_year AS dealYear,
+		hd.deal_month AS dealMonth,
+		hd.deal_day AS dealDay
+		FROM housedeals hd
+		JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+		WHERE hi.apt_seq = #{aptSeq}
+		ORDER BY hd.deal_year DESC, hd.deal_month DESC, hd.deal_day DESC
+	</select>
+
+	<!-- 아파트 이름으로 아파트 정보 조회 -->
+	<select id="getHouseInfoByAptName" parameterType="String"
 		resultType="com.ssafy.house.model.HouseInfoDto">
 		SELECT
 		hi.apt_seq AS aptSeq,           <!-- 아파트 코드 -->
