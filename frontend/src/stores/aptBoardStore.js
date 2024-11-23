@@ -10,7 +10,7 @@ import {
   createComment,
 } from '@/api/aptBoard'
 import { useUserStore } from '@/stores/user'
-import { ref } from 'vue'
+import { useHouseStore } from './houseStore'
 export const useAptBoardStore = defineStore('aptBoard', {
   state: () => ({
     boards: [],
@@ -29,11 +29,19 @@ export const useAptBoardStore = defineStore('aptBoard', {
   actions: {
     // 게시글 생성
     async createNewBoard(board) {
+      const houseStore = useHouseStore()
+      const aptSeq = houseStore.selectedHouse?.aptSeq
+      
+      // selectedHouse가 없거나 aptSeq가 없으면 에러
+      if (!houseStore.selectedHouse || !aptSeq) {
+        throw new Error('선택된 아파트가 없습니다.')
+      }
+
       try {
         await createBoard(
           board,
           (response) => {
-            this.boards.unshift(response.data)
+            this.fetchBoardsByAptSeq(aptSeq)
           },
           (error) => {
             console.error('게시글 생성 실패:', error)
@@ -76,7 +84,13 @@ export const useAptBoardStore = defineStore('aptBoard', {
 
     // 아파트별 게시글 목록 조회
     async fetchBoardsByAptSeq(aptSeq) {
-      if (!aptSeq) return
+      const houseStore = useHouseStore()
+      
+      // selectedHouse가 없거나 aptSeq가 없으면 리턴
+      if (!houseStore.selectedHouse || !aptSeq) {
+        this.boards = []
+        return
+      }
 
       this.isLoading = true
       this.currentAptSeq = aptSeq

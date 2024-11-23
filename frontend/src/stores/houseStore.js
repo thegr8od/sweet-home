@@ -88,18 +88,34 @@ export const useHouseStore = defineStore('houseStore', {
 
       try {
         const data = await this.getHouseDealsByAddress(address)
-        this.houses = data
-        this.markerPositions = data
-          .filter((house) => house.latitude && house.longitude)
-          .map((house) => {
-            const lat = parseFloat(house.latitude)
-            const lng = parseFloat(house.longitude)
-            if (isNaN(lat) || isNaN(lng)) return null
-            return [lat, lng]
-          })
-          .filter((position) => position !== null)
-        console.log('houses:', this.houses)
-        console.log('markerPositions:', this.markerPositions)
+        console.log('data:', data)
+        if (data && Array.isArray(data)) {
+          // houses 배열 업데이트
+          this.houses = data.map(house => ({
+            aptName: house.aptName,
+            aptSeq: house.aptSeq,
+            latitude: house.latitude,
+            longitude: house.longitude,
+            legalDong: house.legalDong
+          }))
+
+          // markerPositions 업데이트 - 유효한 위도/경도만 필터링
+          this.markerPositions = data
+            .filter(house => house.latitude && house.longitude)
+            .map(house => {
+              const lat = parseFloat(house.latitude)
+              const lng = parseFloat(house.longitude)
+              return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+            })
+            .filter(position => position !== null)
+
+          console.log('houses:', this.houses)
+          console.log('markerPositions:', this.markerPositions)
+        } else {
+          this.houses = []
+          this.markerPositions = []
+          console.log('No data found')
+        }
       } catch (error) {
         console.error('Error fetching house list by address:', error)
         this.clearHouses()
