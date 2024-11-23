@@ -28,7 +28,7 @@
         <div class="flex items-center space-x-4">
           <template v-if="userStore.isLoggedIn">
             <span class="text-base font-normal text-gray-700">
-              {{ userStore.user?.name }}님 안녕하세요
+              {{ userStore.userInfo?.name }}님 안녕하세요
             </span>
             <router-link
               to="/mypage"
@@ -80,7 +80,7 @@ const handleLogout = async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) {
-      userStore.logout()
+      userStore.setLogout()
       router.push('/login')
       return
     }
@@ -95,13 +95,13 @@ const handleLogout = async () => {
       },
     )
 
-    userStore.logout()
+    userStore.setLogout()
     router.push('/login')
   } catch (error) {
     console.error('로그아웃 실패:', error)
     // 에러가 발생하더라도 로컬에서는 로그아웃 처리
-    userStore.logout()
-    router.push('/login')
+    // userStore.setLogout()
+    // router.push('/login')
   }
 }
 

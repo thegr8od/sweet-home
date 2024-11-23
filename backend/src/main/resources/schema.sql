@@ -54,11 +54,11 @@ CREATE TABLE IF NOT EXISTS `sweethome`.`user` (
   `token` VARCHAR(255) NULL DEFAULT NULL,
   `is_deleted` TINYINT(1) NULL DEFAULT '0',
   `deleted_at` DATETIME NULL DEFAULT NULL,
+  `profile_image` VARCHAR(255) NULL DEFAULT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
-
 
 -- -----------------------------------------------------
 -- Table `sweethome`.`aptboard`

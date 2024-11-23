@@ -189,9 +189,11 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiInstance } from '@/api/index'
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-vue-next'
+import { useUserStore } from '@/stores/user'
 
 const api = apiInstance()
 const router = useRouter()
+const userStore = useUserStore()
 
 const isLoading = ref(false)
 const showPassword = ref(false)

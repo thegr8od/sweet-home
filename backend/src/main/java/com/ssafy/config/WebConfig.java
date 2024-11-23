@@ -73,8 +73,6 @@ public class WebConfig implements WebMvcConfigurer {
 				.allowCredentials(true)
 				.maxAge(3600);
 	}
-    @Value("${upload.dir}")
-    private String uploadDir;
 
     // 프로필 이미지 접근을 위한 리소스 핸들러 설정
     @Override
