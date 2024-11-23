@@ -12,10 +12,14 @@ public class WebConfig implements WebMvcConfigurer {
 
 	private final JwtInterceptor jwtInterceptor;
 
-	public WebConfig(JwtInterceptor jwtInterceptor) {
-		this.jwtInterceptor = jwtInterceptor;
-	}
 
+  @Value("${upload.dir}")
+  private String uploadDir;
+
+  public WebConfig(JwtInterceptor jwtInterceptor) {
+      this.jwtInterceptor = jwtInterceptor;
+  }
+  
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(jwtInterceptor)
