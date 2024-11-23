@@ -50,5 +50,16 @@ public class HouseServiceImpl implements HouseService {
 	public List<Integer> getHouseDealMonthByYear(String sido, String gugun, String dong, Integer year) {
 		return houseMapper.getHouseDealMonthByYear(sido, gugun, dong, year);
 	}
+	
+	@Override
+	public HouseInfoDto getHouseInfoByDongName(String dongName) {
+	    return houseMapper.getHouseInfoByDongName(dongName);
+	}
+
+	@Override
+	public HouseInfoDto getDongCodeByName(String dongName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

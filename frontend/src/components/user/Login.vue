@@ -98,6 +98,36 @@
             <span v-else>로그인</span>
           </button>
 
+          <!-- 구분선 추가 -->
+          <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white text-gray-500">또는</span>
+            </div>
+          </div>
+
+          <!-- Kakao Login Button -->
+          <button
+            type="button"
+            @click="loginWithKakao"
+            class="w-full flex justify-center items-center py-3 px-4 rounded-md text-sm font-medium text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 transition-colors duration-200"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              class="mr-2"
+            >
+              <path
+                fill="#191919"
+                d="M9 1C4.03 1 0 4.13 0 7.99c0 2.53 1.67 4.75 4.21 6.01-.14.49-.44 1.75-.5 2.02 0 0-.02.16.08.22.1.06.21.02.21.02.28-.04 3.24-2.14 3.75-2.5.4.06.81.08 1.24.08 4.97 0 9-3.13 9-6.99C18 4.13 13.97 1 9 1z"
+              />
+            </svg>
+            카카오로 시작하기
+          </button>
+
           <!-- Sign Up Link -->
           <div class="text-center mt-4">
             <p class="text-sm text-gray-600">
@@ -210,6 +240,16 @@ const handleSubmit = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// 카카오 로그인 함수 추가
+const loginWithKakao = () => {
+  const REDIRECT_URI = 'http://localhost:5173/oauth/callback/kakao'
+  const CLIENT_ID = '6291a05a86bafcd119488f199ed0f889'
+
+  const scope = encodeURIComponent('profile_nickname profile_image')
+  const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&prompt=select_account`
+  window.location.href = kakaoURL
 }
 </script>
 

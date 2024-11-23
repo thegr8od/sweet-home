@@ -136,5 +136,17 @@
 		AND hd.deal_year = #{year}
 		ORDER BY deal_month;
 	</select>
+	
+<!-- 동 이름으로 법정동 코드 조회 -->
+<select id="getHouseInfoByDongName" parameterType="String"
+    resultType="com.ssafy.house.model.HouseInfoDto">
+    SELECT DISTINCT
+        hi.sgg_cd AS sggCd,
+        hi.umd_cd AS umdCd,
+        hi.umd_nm AS umdNm
+    FROM houseinfos hi
+    WHERE hi.umd_nm = #{dongName}
+    LIMIT 1
+</select>
 
 </mapper>

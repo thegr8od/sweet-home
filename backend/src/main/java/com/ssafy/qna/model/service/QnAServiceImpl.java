@@ -45,4 +45,10 @@
 	    public int deleteAnswer(int idx) throws Exception {
 	        return qnaMapper.deleteAnswer(idx);
 	    }
+	    
+	    @Override
+	    public QnADto getQnA(int idx) throws Exception {
+	        return qnaMapper.getQnA(idx);
+	    }
+	    
 	}

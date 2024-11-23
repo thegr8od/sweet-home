@@ -39,14 +39,22 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public int deleteUser(String userId) throws Exception {
-        // 실제 삭제가 아닌 소프트 삭제 수행
         return mapper.deleteUser(userId);
     }
-    
+
     @Override
     public UserDto searchUserById(String userId) throws Exception {
         return mapper.searchUserById(userId);
     }
-    
- 
+
+    @Override
+    public boolean changePassword(String userId, String currentPassword, String newPassword) throws Exception {
+        int result = mapper.changePassword(userId, currentPassword, newPassword);
+        return result > 0;
+    }
+
+    @Override
+    public void updateProfileImage(String userId, String profileImage) throws Exception {
+        mapper.updateProfileImage(userId, profileImage);
+    }
 }

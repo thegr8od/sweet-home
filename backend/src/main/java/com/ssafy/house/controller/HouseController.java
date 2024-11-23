@@ -102,5 +102,35 @@ public class HouseController {
         return new ResponseEntity<>(houseInfo, HttpStatus.OK);
     }
     
+    @GetMapping("/info")
+    @Operation(summary = "아파트/동 정보 조회", description = "아파트/동 이름으로 정보 조회")
+    public ResponseEntity<List<HouseInfoDto>> getHouseInfoByName(
+            @RequestParam String aptName) {
+        System.out.println("요청된 이름: " + aptName); // 로그 추가
+        List<HouseInfoDto> result = houseService.getHouseInfoByAptName(aptName);
+        System.out.println("조회 결과: " + result); // 로그 추가
+        if (result.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+    
+    @GetMapping("/dong")
+    @Operation(summary = "법정동 코드 조회", description = "동 이름으로 법정동 코드 조회")
+    public ResponseEntity<?> getDongInfo(@RequestParam String dongName) {
+        System.out.println("=== 동 정보 조회 요청 ===");
+        System.out.println("요청된 동 이름: " + dongName);
+        
+        HouseInfoDto result = houseService.getHouseInfoByDongName(dongName);
+        System.out.println("조회 결과: " + result);
+        
+        if (result == null) {
+            System.out.println("결과 없음");
+            return new ResponseEntity<>("동 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+        System.out.println("시군구 코드: " + result.getSggCd());
+        System.out.println("읍면동 코드: " + result.getUmdCd());
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
     //
 }

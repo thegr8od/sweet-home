@@ -19,4 +19,6 @@ public interface QnAMapper {
     int deleteQuestion(int idx); // 질문 삭제
 
     int deleteAnswer(int idx); // 답변 삭제
+    
+    QnADto getQnA(int idx) throws Exception;
 }

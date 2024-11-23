@@ -16,4 +16,8 @@ public interface QnAService {
     int deleteQuestion(int idx) throws Exception; // 질문 삭제
 
     int deleteAnswer(int idx) throws Exception; // 답변 삭제
+    
+    QnADto getQnA(int idx) throws Exception;
+    
+    
 }

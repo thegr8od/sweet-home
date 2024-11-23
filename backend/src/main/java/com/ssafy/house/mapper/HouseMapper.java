@@ -32,4 +32,7 @@ public interface HouseMapper {
 	// 거래 년도 별 월 조회
 	List<Integer> getHouseDealMonthByYear(@Param("sido") String sido, @Param("gugun") String gugun,
 			@Param("dong") String dong, @Param("year") Integer year);
+	
+	// 동 이름으로 법정동 코드 조회 추가
+	  HouseInfoDto getHouseInfoByDongName(@Param("dongName") String dongName);
 }

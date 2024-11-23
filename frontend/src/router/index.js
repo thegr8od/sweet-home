@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Register from '@/components/user/Register.vue'
+import Insight from '@/views/Insight.vue'
+import Population from '@/views/Population.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -51,6 +53,27 @@ const router = createRouter({
       path: '/register',
       name: 'Register',
       component: Register,
+    },
+    {
+      path: '/change-password',
+      name: 'ChangePassword',
+      component: () => import('@/views/ChangePasswordView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/insight',
+      name: 'Insight',
+      component: Insight,
+    },
+    {
+      path: '/population',
+      name: 'Population',
+      component: Population,
+    },
+    {
+      path: '/oauth/callback/kakao',
+      name: 'KakaoCallback',
+      component: () => import('@/views/KakaoCallback.vue'),
     },
   ],
 })

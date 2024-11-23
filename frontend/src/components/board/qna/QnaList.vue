@@ -1,71 +1,32 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { apiInstance } from '@/api/index.js';
+import { useUserStore } from '@/stores/user';
+import * as qnaApi from '@/api/qna';
+import { useRouter } from 'vue-router';
 
-const api = apiInstance();
+const userStore = useUserStore();
 const qnaList = ref([]);
 const currentPage = ref(1);
 const itemsPerPage = 10;
-const expandedIdx = ref(null); // 현재 펼쳐진 질문의 idx
-
-const props = defineProps({
-  isAdmin: {
-    type: Boolean,
-    default: false
-  }
-});
-
-// 현재 로그인한 사용자 ID (실제로는 store에서 가져와야 함)
-const currentUserId = ref('user1'); // 테스트용
-
-// 수정 모드 상태 관리
+const expandedIdx = ref(null);
+const newAnswer = ref('');
 const editMode = ref(null);
 const editContent = ref('');
-
-// 게시글 수정
-const startEdit = (qna) => {
-  editMode.value = qna.idx;
-  editContent.value = qna.content;
-};
-
-const cancelEdit = () => {
-  editMode.value = null;
-  editContent.value = '';
-};
-
-const saveEdit = async (qna) => {
-  try {
-    await api.put(`/qna/update/${qna.idx}`, {
-      content: editContent.value
-    });
-    await fetchQnaList();
-    editMode.value = null;
-  } catch (error) {
-    console.error('질문 수정 실패:', error);
-    alert('수정에 실패했습니다.');
-  }
-};
-
-// 게시글 삭제
-const deleteQuestion = async (idx) => {
-  if (!confirm('정말 삭제하시겠습니까?')) return;
-  try {
-    await api.delete(`/qna/delete/${idx}`);
-    await fetchQnaList();
-  } catch (error) {
-    console.error('질문 삭제 실패:', error);
-    alert('삭제에 실패했습니다.');
-  }
-};
+const router = useRouter();
 
 // 작성자 본인 확인
 const isAuthor = (userid) => {
-  return currentUserId.value === userid;
+  return userStore.userInfo?.id === userid;
 };
+
+// admin 체크
+const isAdmin = computed(() => {
+  return userStore.userInfo?.id === 'admin';
+});
 
 // 정렬된 리스트 계산
 const sortedQnaList = computed(() => {
-  return [...qnaList.value].sort((a, b) => b.idx - a.idx); // 번호 내림차순 정렬
+  return [...qnaList.value].sort((a, b) => b.idx - a.idx);
 });
 
 // 현재 페이지 아이템
@@ -80,12 +41,97 @@ const totalPages = computed(() => {
   return Math.ceil(sortedQnaList.value.length / itemsPerPage);
 });
 
-const fetchQnaList = async () => {
+// 게시글 수정
+const startEdit = (qna) => {
+  editMode.value = qna.idx;
+  editContent.value = qna.content;
+};
+
+const cancelEdit = () => {
+  editMode.value = null;
+  editContent.value = '';
+};
+
+const saveEdit = async (qna) => {
   try {
-    const response = await api.get('/qna/list');
-    qnaList.value = response.data;
+    // 토큰 확인
+    const token = localStorage.getItem('token')
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    await qnaApi.updateQuestion({
+      idx: qna.idx,
+      title: qna.title,
+      content: editContent.value,
+      userid: userStore.userInfo.id // userStore에서 현재 로그인한 사용자 ID 가져오기
+    });
+
+    await fetchQnaList();
+    editMode.value = null;
   } catch (error) {
-    console.error('QnA 목록 조회 실패:', error);
+    console.error('질문 수정 실패:', error);
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.');
+      // 로그인 페이지로 리다이렉트
+      router.push('/login');
+    } else if (error.response?.status === 403) {
+      alert('수정 권한이 없습니다.');
+    } else {
+      alert('수정에 실패했습니다.');
+    }
+  }
+};
+
+const deleteQuestion = async (idx) => {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+
+  try {
+    // 토큰 확인
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    await qnaApi.deleteQuestion(idx);
+    await fetchQnaList();
+  } catch (error) {
+    console.error('질문 삭제 실패:', error);
+    if (error.response?.status === 401) {
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+    } else if (error.response?.status === 403) {
+      alert('삭제 권한이 없습니다.');
+    } else {
+      alert('삭제에 실패했습니다.');
+    }
+  }
+};
+
+const submitAnswer = async (questionIdx) => {
+  try {
+    await qnaApi.createAnswer({
+      idx: questionIdx,
+      answer: newAnswer.value
+    });
+    newAnswer.value = '';
+    await fetchQnaList();
+  } catch (error) {
+    console.error('답변 등록 실패:', error);
+    alert('답변 등록에 실패했습니다.');
+  }
+};
+
+const deleteAnswer = async (questionIdx) => {
+  if (!confirm('답변을 삭제하시겠습니까?')) return;
+  try {
+    await qnaApi.deleteAnswer(questionIdx);
+    await fetchQnaList();
+  } catch (error) {
+    console.error('답변 삭제 실패:', error);
+    alert('답변 삭제에 실패했습니다.');
   }
 };
 
@@ -107,47 +153,14 @@ const toggleQuestion = (idx) => {
   expandedIdx.value = expandedIdx.value === idx ? null : idx;
 };
 
-const submitAnswer = async (questionIdx) => {
-  if (!props.isAdmin) {
-    alert('관리자만 답변을 등록할 수 있습니다.');
-    return;
-  }
-
+const fetchQnaList = async () => {
   try {
-    await api.post('/qna/answer', {
-      idx: questionIdx,
-      answer: newAnswer.value
-    });
-    newAnswer.value = ''; // 입력 필드 초기화
-    await fetchQnaList(); // 목록 새로고침
+    const response = await qnaApi.getQnaList();
+    qnaList.value = response.data;
   } catch (error) {
-    console.error('답변 등록 실패:', error);
-    alert('답변 등록에 실패했습니다.');
+    console.error('QnA 목록 조회 실패:', error);
   }
 };
-
-const deleteAnswer = async (questionIdx) => {
-  if (!props.isAdmin) {
-    alert('관리자만 답변을 삭제할 수 있습니다.');
-    return;
-  }
-
-  if (!confirm('답변을 삭제하시겠습니까?')) return;
-
-  try {
-    await api.delete(`/qna/delete-answer/${questionIdx}`);
-    await fetchQnaList();
-  } catch (error) {
-    console.error('답변 삭제 실패:', error);
-    alert('답변 삭제에 실패했습니다.');
-  }
-};
-
-// admin 체크를 위한 computed 속성 수정
-const isAdmin = computed(() => {
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-  return userInfo.userid === 'admin'; // userid로 수정
-});
 
 onMounted(() => {
   fetchQnaList();
@@ -202,9 +215,46 @@ defineExpose({
                   <span class="text-blue-600 font-medium">Q</span>
                 </div>
                 <div class="flex-grow">
-                  <div class="text-gray-900 whitespace-pre-wrap">{{ qna.content }}</div>
-                  <div class="text-sm text-gray-500 mt-2">
-                    {{ qna.userid }} | {{ formatDate(qna.date) }}
+                  <div v-if="editMode === qna.idx">
+                    <textarea
+                      v-model="editContent"
+                      class="w-full p-4 border rounded-lg h-32 mb-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    ></textarea>
+                    <div class="flex justify-end gap-2">
+                      <button
+                        @click="saveEdit(qna)"
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        저장
+                      </button>
+                      <button
+                        @click="cancelEdit"
+                        class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div class="text-gray-900 whitespace-pre-wrap">{{ qna.content }}</div>
+                    <div class="text-sm text-gray-500 mt-2">
+                      {{ qna.userid }} | {{ formatDate(qna.date) }}
+                    </div>
+                    <div v-if="isAuthor(qna.userid)" class="mt-2 flex gap-2">
+                      <button
+                        @click.stop="startEdit(qna)"
+                        class="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                      >
+                        수정
+                      </button>
+                      <span class="text-gray-300">|</span>
+                      <button
+                        @click.stop="deleteQuestion(qna.idx)"
+                        class="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -217,14 +267,14 @@ defineExpose({
                 </div>
                 <div class="flex-grow">
                   <div class="text-gray-900 whitespace-pre-wrap">{{ qna.answer }}</div>
-                  <div class="flex justify-between items-center mt-2">
+                  <div v-if="qna.answer" class="flex justify-between items-center mt-2">
                     <div class="text-sm text-gray-500">
                       관리자 | {{ formatDate(qna.answer_date) }}
                     </div>
                     <button
                       v-if="isAdmin"
                       @click.stop="deleteAnswer(qna.idx)"
-                      class="text-sm text-red-600 hover:text-red-800"
+                      class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
                     >
                       답변 삭제
                     </button>
@@ -242,7 +292,7 @@ defineExpose({
                     placeholder="답변을 입력하세요"
                     class="w-full p-4 border rounded-lg h-32 mb-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   ></textarea>
-                  <div class="flex justify-end">
+                  <div v-if="isAdmin" class="flex justify-end mt-2">
                     <button
                       @click="submitAnswer(qna.idx)"
                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"

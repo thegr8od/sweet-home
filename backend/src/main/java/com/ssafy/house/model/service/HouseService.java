@@ -29,4 +29,8 @@ public interface HouseService {
 	// 거래년도 별 월 조회
 	List<Integer> getHouseDealMonthByYear(String sido, String gugun, String dong, Integer month);
 
+	// 인터페이스에 메서드 추가
+	HouseInfoDto getDongCodeByName(String dongName);
+	
+	HouseInfoDto getHouseInfoByDongName(String dongName);
 }

@@ -41,4 +41,11 @@
         SET answer = NULL, answer_date = NULL
         WHERE idx = #{idx}
     </update>
+    
+    <!-- 특정 질문 조회 -->
+<select id="getQnA" parameterType="int" resultType="QnADto">
+    SELECT idx, userid, title, content, date, answer, answer_date
+    FROM qna
+    WHERE idx = #{idx}
+</select>
 </mapper>

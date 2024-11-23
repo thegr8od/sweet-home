@@ -10,12 +10,13 @@ function apiInstance() {
     },
   })
 
-  // 요청 인터셉터
+  // 요청 인터셉터 수정
   instance.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('token')
       if (token) {
-        const cleanToken = token.replace(/\s+/g, '')
+        // 토큰에서 불필요한 공백 제거 및 Bearer 접두사 확인
+        const cleanToken = token.replace(/^Bearer\s+/, '').trim()
         config.headers.Authorization = `Bearer ${cleanToken}`
       }
       return config
@@ -23,6 +24,20 @@ function apiInstance() {
     (error) => {
       return Promise.reject(error)
     },
+  )
+
+  // 응답 인터셉터 추가
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        // 토큰이 만료되었거나 유효하지 않은 경우
+        localStorage.removeItem('token') // 토큰 제거
+        // 로그인 페이지로 리다이렉트 또는 다른 처리
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
   )
 
   return instance
@@ -38,7 +53,6 @@ function houseInstance() {
   return instance
 }
 
-// const KAKAO_SERVICE_KEY = process.env.VUE_APP_KAKAO_API_KEY;
 const KAKAO_SERVICE_KEY = '56b9eb363581e27c66bd552d48937f74'
 function kakaoInstance() {
   const instance = axios.create({
@@ -72,4 +86,15 @@ function detailInstance2() {
   return instance
 }
 
-export { apiInstance, houseInstance, kakaoInstance, detailInstance1, detailInstance2 }
+// 카카오 로그인용 인스턴스 추가
+function authInstance() {
+  const instance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Content-type': 'application/json',
+    },
+  })
+  return instance
+}
+
+export { apiInstance, houseInstance, kakaoInstance, detailInstance1, detailInstance2, authInstance }

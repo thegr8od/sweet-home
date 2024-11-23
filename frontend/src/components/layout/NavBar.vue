@@ -70,18 +70,38 @@ const router = useRouter()
 
 const menuItems = [
   { id: 1, name: '실거래가조회', href: '/house' },
-  { id: 2, name: '인사이트', href: '#' },
-  { id: 3, name: '질문게시판', href: '/qna' },
+  { id: 2, name: '인구변화', href: '/population' },
+  { id: 3, name: '인사이트', href: '/insight' },
+  { id: 4, name: '질문게시판', href: '/qna' },
 ]
 
 // 로그아웃 처리
 const handleLogout = async () => {
   try {
-    await api.post('/user/logout')
+    const token = localStorage.getItem('token')
+    if (!token) {
+      userStore.logout()
+      router.push('/login')
+      return
+    }
+
+    await api.post(
+      '/user/logout',
+      {}, // empty body
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+
     userStore.logout()
     router.push('/login')
   } catch (error) {
     console.error('로그아웃 실패:', error)
+    // 에러가 발생하더라도 로컬에서는 로그아웃 처리
+    userStore.logout()
+    router.push('/login')
   }
 }
 

@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.ssafy.user.mapper.UserMapper">
 
 	<!-- 사용자 등록 -->
-	<insert id="registerUser" parameterType="UserDto"
-		useGeneratedKeys="true" keyProperty="id">
-		INSERT INTO user (id, password,
-		email, name, age, date)
-		VALUES (#{id}, #{password}, #{email}, #{name},
-		#{age}, NOW())
+	<insert id="registerUser"
+		parameterType="com.ssafy.user.model.UserDto" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO user (id, password, email, name, profile_image)
+		VALUES (#{id}, #{password}, #{email}, #{name}, #{profileImage})
 	</insert>
 
 	<!-- 모든 사용자 조회 -->
-	<select id="searchAllUser" resultType="UserDto">
-		SELECT id, password,
-		email, name, age, date
+	<select id="searchAllUser"
+		resultType="com.ssafy.user.model.UserDto">
+		SELECT id, password, email, name, age, date, profile_image
 		FROM user
 		ORDER BY id ASC;
 	</select>
 
 	<!-- 사용자 조회 시 삭제되지 않은 사용자만 조회 -->
-	<select id="searchUser" parameterType="UserDto"
-		resultType="UserDto">
-		SELECT id, password, email, name, age, date
+	<select id="searchUser"
+		parameterType="com.ssafy.user.model.UserDto"
+		resultType="com.ssafy.user.model.UserDto">
+		SELECT id, password, email, name, age, date, profile_image
 		FROM user
 		WHERE
 		id = #{id}
@@ -33,29 +33,54 @@
 	</select>
 
 	<!-- 사용자 정보 수정 -->
-	<update id="editUser" parameterType="UserDto">
+	<update id="editUser"
+		parameterType="com.ssafy.user.model.UserDto">
 		UPDATE user
-		SET password =
-		#{password}, name = #{name}, email = #{email}, age =
+		SET password = #{password}, name = #{name}, email = #{email}, age =
 		#{age}
-		WHERE id =
-		#{id}
+		WHERE id = #{id}
 	</update>
 
 	<!-- 사용자 삭제 -->
 	<update id="deleteUser" parameterType="String">
 		UPDATE user
-		SET is_deleted
-		= TRUE,
+		SET is_deleted = TRUE,
 		deleted_at = NOW()
 		WHERE id = #{userId}
 	</update>
 
-	<select id="searchUserById" parameterType="String"
-		resultType="UserDto">
-		SELECT id, password, email, name, age, date as joinDate
+	<select id="searchUserById" parameterType="string"
+		resultType="userDto">
+		SELECT
+		id,
+		password,
+		email,
+		name,
+		age,
+		date as joinDate,
+		profile_image as profileImage  <!-- 이 부분이 중요합니다 -->
 		FROM user
-		WHERE id = #{userId}
+		WHERE id = #{id}
 		AND is_deleted = FALSE
 	</select>
+
+	<update id="changePassword" parameterType="map">
+		UPDATE user
+		SET password = #{newPassword}
+		WHERE id = #{userId} AND password = #{currentPassword}
+		AND is_deleted = FALSE
+	</update>
+
+	<update id="updateProfileImage" parameterType="map">
+		UPDATE user
+		SET profile_image = #{profileImage}
+		WHERE id = #{userId}
+		AND is_deleted = FALSE
+	</update>
+
+	<update id="updateUser" parameterType="userDto">
+		UPDATE user
+		SET profile_image = #{profileImage}
+		WHERE id = #{id}
+	</update>
 </mapper>
