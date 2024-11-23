@@ -8,8 +8,8 @@
 	<insert id="registerUser"
 		parameterType="com.ssafy.user.model.UserDto" useGeneratedKeys="true"
 		keyProperty="id">
-		INSERT INTO user (id, password, email, name, profile_image)
-		VALUES (#{id}, #{password}, #{email}, #{name}, #{profileImage})
+		INSERT INTO user (id, password, email, name, age, profile_image)
+		VALUES (#{id}, #{password}, #{email}, #{name}, #{age}, #{profileImage})
 	</insert>
 
 	<!-- 모든 사용자 조회 -->
@@ -36,7 +36,7 @@
 	<update id="editUser"
 		parameterType="com.ssafy.user.model.UserDto">
 		UPDATE user
-		SET password = #{password}, name = #{name}, email = #{email}, age =
+		SET name = #{name}, email = #{email}, age =
 		#{age}
 		WHERE id = #{id}
 	</update>
