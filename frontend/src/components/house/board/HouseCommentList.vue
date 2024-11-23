@@ -1,0 +1,214 @@
+<template>
+  <div v-if="!houseStore.showCommentWriting" class="house-comment-list">
+    <!-- 헤더 섹션 -->
+    <div class="comment-header">
+      <button class="back-button" @click="goBack">
+        <ArrowLeftIcon class="w-5 h-5" />
+      </button>
+      <h2 class="header-title">단지글</h2>
+    </div>
+
+    <!-- 로딩 상태 -->
+    <div v-if="aptBoardStore.isLoading" class="flex justify-center items-center p-4">
+      <span>로딩 중...</span>
+    </div>
+
+    <!-- 에러 메시지 -->
+    <div v-else-if="aptBoardStore.error" class="text-red-500 p-4">
+      {{ aptBoardStore.error }}
+    </div>
+
+    <!-- 게시글 없음 -->
+    <div v-else-if="!aptBoardStore.boards.length" class="text-gray-500 p-4">
+      작성된 게시글이 없습니다.
+    </div>
+
+    <!-- 컨텐츠 섹션 -->
+    <div v-else class="comment-content type1">
+      <!-- 댓글 목록 -->
+      <div class="comment-list">
+        <HouseComment
+          v-for="(board, index) in aptBoardStore.boards"
+          :key="board.id"
+          :board="board"
+          :is-first="index === 0"
+        />
+      </div>
+    </div>
+
+    <!-- 플로팅 아이콘 -->
+    <button 
+      class="floating-button" 
+      @click="handleWritingClick"
+    >
+      <PencilIcon class="w-5 h-5 text-white" />
+    </button>
+  </div>
+
+  <HouseCommentWriting v-else />
+</template>
+
+<script setup>
+import { onMounted, watch } from 'vue'
+import { ArrowLeftIcon, PencilIcon } from 'lucide-vue-next'
+import { useHouseStore } from '@/stores/houseStore'
+import { useAptBoardStore } from '@/stores/aptBoardStore'
+import { useUserStore } from '@/stores/user'
+import HouseComment from './HouseComment.vue'
+import HouseCommentWriting from './HouseCommentWriting.vue'
+
+const houseStore = useHouseStore()
+const aptBoardStore = useAptBoardStore()
+const userStore = useUserStore()
+
+// 선택된 아파트가 변경될 때마다 게시글 목록 업데이트
+watch(
+  () => houseStore.selectedHouse,
+  async (newHouse) => {
+    if (newHouse && newHouse.aptSeq) {
+      await aptBoardStore.fetchBoardsByAptSeq(newHouse.aptSeq)
+    } else {
+      aptBoardStore.clearBoards()
+    }
+  }
+)
+
+// 컴포넌트 마운트 시 현재 선택된 아파트의 게시글 목록 조회
+onMounted(async () => {
+  if (houseStore.selectedHouse?.aptSeq) {
+    await aptBoardStore.fetchBoardsByAptSeq(houseStore.selectedHouse.aptSeq)
+  }
+})
+
+const goBack = () => {
+  houseStore.hideComments()
+}
+
+const handleWritingClick = () => {
+  if (!userStore.isLoggedIn) {
+    alert('로그인이 필요한 서비스입니다.')
+    router.push('/login')
+    return
+  }
+  houseStore.showCommentWritingPanel()
+}
+</script>
+
+<style scoped>
+.house-comment-list {
+  height: 100%;
+  background-color: #f5f5f5;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+.back-button {
+  padding: 8px;
+  margin-right: 8px;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  color: #3b82f6;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.comment-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 스크롤바 스타일 */
+.type1::-webkit-scrollbar {
+  width: 8px;
+}
+
+.type1::-webkit-scrollbar-thumb {
+  background-color: #bdbdbd;
+  border-radius: 4px;
+}
+
+.type1::-webkit-scrollbar-track {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+/* 플로팅 버튼 스타일 수정 */
+.floating-button {
+  position: fixed;
+  left: 650px;
+  bottom: 20px;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  transition: all 0.2s ease;
+}
+
+.floating-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+/* 모바일 화면 */
+@media screen and (max-width: 767px) {
+  .floating-button {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* 태블릿 화면 (중간 화면) */
+@media screen and (min-width: 768px) {
+  .floating-button {
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* 데스크탑 화면 (큰 화면) */
+@media screen and (min-width: 1200px) {
+  .floating-button {
+    left: 750px;
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+  }
+}
+</style>

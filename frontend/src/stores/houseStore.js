@@ -12,6 +12,11 @@ export const useHouseStore = defineStore('houseStore', {
     aptInfo: null,
     aptDeals: [],
     none: true,
+    showCommentList: false,
+    showReCommentList: false,
+    isCommentWritingPanelVisible: false,
+    showCommentWriting: false,
+    selectedBoardId: null,
   }),
 
   actions: {
@@ -121,10 +126,18 @@ export const useHouseStore = defineStore('houseStore', {
     setSelectedHouse(house) {
       this.selectedHouse = house
       this.showDetail = true
+      this.showCommentList = false
+      this.showReCommentList = false
+      this.showCommentWriting = false
     },
 
     closeDetail() {
       this.showDetail = false
+      this.showCommentList = false
+      this.selectedHouse = null
+      this.selectedPosition = null
+      this.aptInfo = null
+      this.aptDeals = []
     },
 
     clearHouses() {
@@ -133,8 +146,54 @@ export const useHouseStore = defineStore('houseStore', {
       this.selectedPosition = null
       this.selectedHouse = null
       this.showDetail = false
+      this.showCommentList = false
+      this.showReCommentList = false
+      this.showCommentWriting = false
       this.aptInfo = null
       this.aptDeals = []
+    },
+
+    showComments() {
+      this.showCommentList = true
+      this.showCommentWriting = false
+      this.showDetail = true
+    },
+
+    hideComments() {
+      this.showCommentList = false
+      this.showCommentWriting = false
+      this.showDetail = true
+    },
+
+    showReComments(boardId) {
+      this.showReCommentList = true
+      this.showCommentList = false
+      this.showDetail = true
+      this.selectedBoardId = boardId
+    },
+
+    hideReComments() {
+      this.showReCommentList = false
+      this.showCommentList = true
+      this.showDetail = true
+      this.selectedBoardId = null
+    },
+
+    showCommentWritingPanel() {
+      this.showCommentWriting = true
+      this.showCommentList = false
+      this.showDetail = true
+    },
+
+    hideCommentWritingPanel() {
+      this.showCommentWriting = false
+      this.showCommentList = true
+      this.showDetail = true
+    },
+
+    showDetailPanel() {
+      this.showCommentList = false
+      this.showDetail = true
     },
   },
 })

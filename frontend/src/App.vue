@@ -29,11 +29,13 @@ onMounted(async () => {
           Authorization: `Bearer ${token}`,
         },
       })
-      userStore.setUserInfo(response.data)
+      userStore.setLoginSuccess(response.data.id, response.data)
     } catch (error) {
       console.error('자동 로그인 실패:', error)
-      userStore.clearUserInfo()
+      userStore.setLogout()
     }
+  } else {
+    userStore.setLogout()
   }
 })
 </script>

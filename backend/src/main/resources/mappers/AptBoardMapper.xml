@@ -7,35 +7,72 @@
 
     <!-- Create -->
     <insert id="createBoard" parameterType="AptBoardDto" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO aptboard (apt_seq, user_id, title, content, date)
-        VALUES (#{aptSeq}, #{userId}, #{title}, #{content}, NOW());
+        INSERT INTO aptboard (
+            apt_seq, user_id, title, content, 
+            likes_count, comments_count, date, created_at, 
+            is_deleted
+        )
+        VALUES (
+            #{aptSeq}, #{userId}, #{title}, #{content}, 
+            0, 0, NOW(), NOW(), 
+            false
+        );
     </insert>
 
     <!-- Read by ID -->
-    <select id="getBoardById" parameterType="int" resultType="AptBoardDto">
+    <select id="getBoardById" resultType="AptBoardDto">
         SELECT 
-            id AS id,
-            apt_seq AS aptSeq,
-            user_id AS userId,
-            title AS title,
-            content AS content,
-            date AS date
-        FROM aptboard
-        WHERE id = #{id};
+            a.id,
+            a.apt_seq AS aptSeq,
+            a.user_id AS userId,
+            a.title,
+            a.content,
+            a.likes_count AS likesCount,
+            a.comments_count AS commentsCount,
+            a.date,
+            a.created_at AS createdAt,
+            a.updated_at AS updatedAt,
+            a.is_deleted AS isDeleted,
+            a.deleted_at AS deletedAt,
+            u.name AS userName,
+            h.apt_nm AS aptName,
+            h.umd_nm AS dongName,
+            CASE 
+                WHEN #{userId} IS NULL THEN false 
+                WHEN al.id IS NOT NULL THEN true 
+                ELSE false 
+            END AS isLiked
+        FROM aptboard a
+        JOIN user u ON a.user_id = u.id
+        JOIN houseinfos h ON a.apt_seq = h.apt_seq
+        LEFT JOIN aptboard_likes al ON a.id = al.board_id AND al.user_id = #{userId}
+        WHERE a.id = #{id} AND a.is_deleted = false;
     </select>
 
     <!-- Read by AptSeq -->
     <select id="getBoardsByAptSeq" parameterType="String" resultType="AptBoardDto">
         SELECT 
-            id AS id,
-            apt_seq AS aptSeq,
-            user_id AS userId,
-            title AS title,
-            content AS content,
-            date AS date
-        FROM aptboard
-        WHERE apt_seq = #{aptSeq}
-        ORDER BY date DESC;
+            a.id,
+            a.apt_seq AS aptSeq,
+            a.user_id AS userId,
+            a.title,
+            a.content,
+            a.likes_count AS likesCount,
+            a.comments_count AS commentsCount,
+            a.date,
+            a.created_at AS createdAt,
+            a.updated_at AS updatedAt,
+            u.name AS userName,
+            h.apt_nm AS aptName,
+            h.umd_nm AS dongName,
+            CASE WHEN al.id IS NOT NULL THEN true ELSE false END AS isLiked
+        FROM aptboard a
+        JOIN user u ON a.user_id = u.id
+        JOIN houseinfos h ON a.apt_seq = h.apt_seq
+        LEFT JOIN aptboard_likes al ON a.id = al.board_id AND al.user_id = #{userId}
+        WHERE a.apt_seq = #{aptSeq} 
+        AND a.is_deleted = false
+        ORDER BY a.created_at DESC;
     </select>
 
     <!-- Update -->
@@ -44,12 +81,16 @@
         SET 
             title = #{title}, 
             content = #{content}, 
-            date = NOW()
-        WHERE id = #{id};
+            updated_at = NOW()
+        WHERE id = #{id} AND is_deleted = false;
     </update>
 
-    <!-- Delete -->
-    <delete id="deleteBoard" parameterType="int">
-        DELETE FROM aptboard WHERE id = #{id};
-    </delete>
+    <!-- Soft Delete -->
+    <update id="deleteBoard" parameterType="int">
+        UPDATE aptboard
+        SET 
+            is_deleted = true,
+            deleted_at = NOW()
+        WHERE id = #{id};
+    </update>
 </mapper>

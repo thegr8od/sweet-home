@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.aptboard.mapper.AptBoardCommentMapper">
+    
+    <insert id="createComment" parameterType="AptBoardCommentDto">
+        INSERT INTO aptboard_comments (
+            board_id, user_id, content, 
+            likes_count, created_at, is_deleted
+        )
+        VALUES (
+            #{boardId}, #{userId}, #{content}, 
+            0, NOW(), false
+        );
+    </insert>
+    
+    <select id="getCommentsByBoardId" resultType="AptBoardCommentDto">
+        SELECT 
+            c.id,
+            c.board_id as boardId,
+            c.user_id as userId,
+            c.content,
+            c.likes_count as likesCount,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.is_deleted as isDeleted,
+            c.deleted_at as deletedAt,
+            u.name as userName,
+            CASE WHEN acl.id IS NOT NULL THEN true ELSE false END AS isLiked
+        FROM aptboard_comments c
+        JOIN user u ON c.user_id = u.id
+        LEFT JOIN aptboard_comment_likes acl ON c.id = acl.comment_id AND acl.user_id = #{userId}
+        WHERE c.board_id = #{boardId}
+        AND c.is_deleted = false
+        ORDER BY c.created_at ASC;
+    </select>
+    
+    <select id="getCommentById" resultType="AptBoardCommentDto">
+        SELECT 
+            c.id,
+            c.board_id as boardId,
+            c.user_id as userId,
+            c.content,
+            c.likes_count as likesCount,
+            c.created_at as createdAt,
+            c.updated_at as updatedAt,
+            c.is_deleted as isDeleted,
+            c.deleted_at as deletedAt,
+            u.name as userName,
+            CASE WHEN acl.id IS NOT NULL THEN true ELSE false END AS isLiked
+        FROM aptboard_comments c
+        JOIN user u ON c.user_id = u.id
+        LEFT JOIN aptboard_comment_likes acl ON c.id = acl.comment_id AND acl.user_id = #{userId}
+        WHERE c.id = #{id};
+    </select>
+    
+    <update id="updateComment" parameterType="AptBoardCommentDto">
+        UPDATE aptboard_comments
+        SET 
+            content = #{content},
+            updated_at = NOW()
+        WHERE id = #{id} AND is_deleted = false;
+    </update>
+    
+    <update id="deleteComment" parameterType="int">
+        UPDATE aptboard_comments
+        SET 
+            is_deleted = true,
+            deleted_at = NOW()
+        WHERE id = #{id};
+    </update>
+</mapper> 

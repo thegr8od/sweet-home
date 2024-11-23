@@ -27,15 +27,32 @@
           <template v-for="year in displayedYears" :key="year">
             <tr class="bg-gray-50">
               <td
-                :rowspan="displayedTransactions[year].length + 1"
+                :rowspan="displayedTransactions[year].length"
                 class="px-4 py-3 text-sm font-medium border-r text-center"
               >
                 {{ year }}
               </td>
+              <td class="px-4 py-3 text-sm text-center">
+                {{
+                  formatDate(
+                    displayedTransactions[year][0].dealMonth,
+                    displayedTransactions[year][0].dealDay,
+                  )
+                }}
+              </td>
+              <td class="px-4 py-3 text-sm text-center">
+                {{ displayedTransactions[year][0].excluUseAr }}㎡
+              </td>
+              <td class="px-4 py-3 text-sm text-center">
+                {{ formatPrice(displayedTransactions[year][0].tradeAmount) }}
+              </td>
+              <td class="px-4 py-3 text-sm text-center">
+                {{ displayedTransactions[year][0].floor }}층
+              </td>
             </tr>
             <tr
-              v-for="deal in displayedTransactions[year]"
-              :key="`${deal.dealYear}${deal.dealMonth}${deal.dealDay}`"
+              v-for="(deal, index) in displayedTransactions[year].slice(1)"
+              :key="`${year}-${deal.dealYear}${deal.dealMonth}${deal.dealDay}-${index}`"
               class="hover:bg-gray-100"
             >
               <td class="px-4 py-3 text-sm text-center">
@@ -95,11 +112,8 @@ const displayedTransactions = computed(() => {
   const visibleDeals = aptDeals.value
     .slice()
     .sort((a, b) => {
-      // 연도 내림차순
       if (b.dealYear !== a.dealYear) return b.dealYear - a.dealYear
-      // 월 내림차순
       if (b.dealMonth !== a.dealMonth) return b.dealMonth - a.dealMonth
-      // 일 내림차순
       return b.dealDay - a.dealDay
     })
     .slice(0, endIndex)
@@ -110,12 +124,7 @@ const displayedTransactions = computed(() => {
     if (!groupedData[year]) {
       groupedData[year] = []
     }
-    // 각 연도 내에서도 최신순으로 정렬
     groupedData[year].push(deal)
-    groupedData[year].sort((a, b) => {
-      if (b.dealMonth !== a.dealMonth) return b.dealMonth - a.dealMonth
-      return b.dealDay - a.dealDay
-    })
   })
 
   return groupedData
@@ -202,5 +211,14 @@ button:hover {
 
 .gap-1 {
   gap: 0.25rem;
+}
+
+.bg-white {
+  padding-bottom: 20px;
+}
+
+.deal-section {
+  background-color: white;
+  padding-bottom: 20px;
 }
 </style>

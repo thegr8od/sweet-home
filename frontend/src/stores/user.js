@@ -4,40 +4,43 @@ export const useUserStore = defineStore(
   'user',
   {
     state: () => ({
-      userInfo: null,
       isLoggedIn: false,
+      userId: null,
+      userInfo: null,
     }),
 
     getters: {
-      user: (state) => state.userInfo,
       getIsLoggedIn: (state) => state.isLoggedIn,
+      getUserId: (state) => state.userId,
+      getUserInfo: (state) => state.userInfo,
     },
 
     actions: {
-      setUserInfo(user) {
-        this.userInfo = user
+      setLoginSuccess(userId, userInfo) {
         this.isLoggedIn = true
+        this.userId = userId
+        this.userInfo = userInfo
       },
 
-      setToken(token) {
-        const cleanToken = token.replace(/\s+/g, '')
-        localStorage.setItem('token', cleanToken)
-        this.isLoggedIn = true
-      },
-
-      logout() {
-        this.userInfo = null
+      setLogout() {
         this.isLoggedIn = false
+        this.userId = null
+        this.userInfo = null
         localStorage.removeItem('token')
       },
 
-      // 페이지 새로고침시 로그인 상태 복구
-      initializeStore() {
+      updateUserInfo(userInfo) {
+        this.userInfo = userInfo
+      },
+
+      initializeLoginState() {
         const token = localStorage.getItem('token')
         if (token) {
           this.isLoggedIn = true
+        } else {
+          this.setLogout()
         }
-      },
+      }
     },
   },
   {

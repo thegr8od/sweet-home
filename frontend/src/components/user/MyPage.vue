@@ -244,6 +244,7 @@ const getUserInfo = async () => {
     })
 
     userInfo.value = response.data
+    userStore.updateUserInfo(response.data)
     form.value.name = response.data.name
     form.value.age = response.data.age
 
@@ -272,7 +273,7 @@ const getUserInfo = async () => {
     console.error('사용자 정보 조회 실패:', error)
     if (error.response?.status === 401) {
       alert('인증이 만료되었습니다. 다시 로그인해주세요.')
-      userStore.logout()
+      userStore.setLogout()
       router.push('/login')
     }
   }

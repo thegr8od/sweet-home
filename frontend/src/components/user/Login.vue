@@ -230,8 +230,7 @@ const handleSubmit = async () => {
         },
       })
 
-      userStore.setUserInfo(userResponse.data)
-
+      userStore.setLoginSuccess(userResponse.data.id, userResponse.data)
       router.push('/')
     }
   } catch (error) {

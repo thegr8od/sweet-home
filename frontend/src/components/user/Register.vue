@@ -320,6 +320,7 @@ const handleSubmit = async () => {
     })
 
     alert('회원가입이 완료되었습니다.')
+    userStore.setLogout()  // 상태 초기화
     router.push('/login')
   } catch (error) {
     console.error('회원가입 실패:', error)

@@ -107,7 +107,7 @@ const handleLogout = async () => {
 
 // 컴포넌트 마운트 시 로그인 상태 복구
 onMounted(() => {
-  userStore.initializeStore()
+  userStore.initializeLoginState()
 })
 </script>
 

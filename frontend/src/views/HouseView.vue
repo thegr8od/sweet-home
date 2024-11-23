@@ -9,7 +9,10 @@
       </div>
       <transition name="slide" @after-enter="afterEnter">
         <div v-if="showDetail" class="detail-panel">
-          <house-detail />
+          <house-detail v-if="!showCommentList && !showReCommentList && !showCommentWriting" />
+          <house-comment-list v-else-if="showCommentList" />
+          <house-comment-writing v-else-if="showCommentWriting" />
+          <house-re-comment-list v-else />
           <button class="close-button" @click="closeDetail">
             <span>&times;</span>
           </button>
@@ -26,6 +29,9 @@
 import HouseSearchBar from '@/components/house/HouseSearchBar.vue'
 import HouseList from '@/components/house/HouseList.vue'
 import HouseDetail from '@/components/house/HouseDetail.vue'
+import HouseCommentList from '@/components/house/board/HouseCommentList.vue'
+import HouseReCommentList from '@/components/house/board/HouseReCommentList.vue'
+import HouseCommentWriting from '@/components/house/board/HouseCommentWriting.vue'
 import DefaultMap from '@/components/map/DefaultMap.vue'
 import { useHouseStore } from '@/stores/houseStore'
 import { storeToRefs } from 'pinia'
@@ -37,11 +43,15 @@ export default {
     HouseSearchBar,
     HouseList,
     HouseDetail,
+    HouseCommentList,
+    HouseReCommentList,
+    HouseCommentWriting,
     DefaultMap,
   },
   setup() {
     const houseStore = useHouseStore()
-    const { showDetail, selectedPosition } = storeToRefs(houseStore)
+    const { showDetail, selectedPosition, showCommentList, showReCommentList, showCommentWriting } =
+      storeToRefs(houseStore)
     const mapRef = ref(null)
 
     const closeDetail = () => {
@@ -60,6 +70,9 @@ export default {
 
     return {
       showDetail,
+      showCommentList,
+      showReCommentList,
+      showCommentWriting,
       closeDetail,
       mapRef,
       afterEnter,

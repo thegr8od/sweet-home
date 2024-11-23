@@ -241,7 +241,6 @@ function updateMarkers(positions) {
 
         // 선택된 집 정보 업데이트 및 상세 패널 표시
         houseStore.setSelectedHouse(house)
-        houseStore.showDetail = true
 
         if (house.aptSeq) {
           console.log('맵: house.aptSeq:', house.aptSeq)
