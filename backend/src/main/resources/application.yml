@@ -1,0 +1,2 @@
+jwt:
+  secret: your-256-bit-secret-key-here-it-should-be-at-least-32-characters 

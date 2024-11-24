@@ -17,27 +17,19 @@ public class InterestServiceImpl implements InterestService {
     }
 
     @Override
-    public void addInterest(InterestDto interestDto) throws Exception {
-        // 관심 아파트 등록
-        interestMapper.insertInterest(interestDto);
+    public void addInterest(String aptSeq, String userId) {
+        // InterestMapper.xml 파일에서
+        System.out.println("Inserting values - apt_seq: " + aptSeq + ", user_id: " + userId);
+        interestMapper.insertInterest(aptSeq, userId);
     }
 
     @Override
-    public void removeInterest(int no) throws Exception {
-        // 관심 아파트 삭제
-        int deletedCount = interestMapper.deleteInterest(no);
-        if (deletedCount == 0) {
-            throw new Exception("삭제할 항목이 존재하지 않습니다.");
-        }
+    public void removeInterest(String aptSeq, String userId) {
+        interestMapper.deleteInterest(aptSeq, userId);
     }
 
     @Override
-    public List<InterestDto> getInterestsByUserId(String userId) throws Exception {
-        // 특정 사용자의 관심 아파트 목록 조회
-        List<InterestDto> interests = interestMapper.getInterestsByUserId(userId);
-        if (interests.isEmpty()) {
-            throw new Exception("관심 아파트 목록이 존재하지 않습니다.");
-        }
-        return interests;
+    public List<InterestDto> getInterestsByUserId(String userId) {
+        return interestMapper.getInterestsByUserId(userId);
     }
 }

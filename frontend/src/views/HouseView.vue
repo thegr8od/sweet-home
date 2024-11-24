@@ -21,6 +21,7 @@
     </div>
     <div class="map-container" :class="{ 'map-shifted': showDetail }">
       <DefaultMap class="kakao-map" ref="mapRef"></DefaultMap>
+      <InterestList class="interest-list" />
     </div>
   </div>
 </template>
@@ -36,6 +37,7 @@ import DefaultMap from '@/components/map/DefaultMap.vue'
 import { useHouseStore } from '@/stores/houseStore'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
+import InterestList from '@/components/interest/InterestList.vue'
 
 export default {
   name: 'HouseView',
@@ -47,6 +49,7 @@ export default {
     HouseReCommentList,
     HouseCommentWriting,
     DefaultMap,
+    InterestList,
   },
   setup() {
     const houseStore = useHouseStore()
@@ -228,5 +231,18 @@ export default {
   .slide-leave-to {
     transform: translateY(100%);
   }
+}
+
+.interest-list {
+  position: fixed;
+  top: 80px; /* 상단에서 약간의 여백 */
+  right: 20px; 
+  width: 300px; /* 적절한 너비 */
+  max-height: calc(100vh - 100px); /* 화면 높이에서 상하 여백을 뺀 높이 */
+  background: white;
+  z-index: 3;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: auto;
 }
 </style>

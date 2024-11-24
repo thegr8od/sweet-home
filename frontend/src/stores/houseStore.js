@@ -7,6 +7,7 @@ export const useHouseStore = defineStore('houseStore', {
     houses: [],
     selectedHouse: null,
     markerPositions: [],
+    interestMarkerPositions: [],
     selectedPosition: null,
     showDetail: false,
     aptInfo: null,
@@ -210,6 +211,35 @@ export const useHouseStore = defineStore('houseStore', {
     showDetailPanel() {
       this.showCommentList = false
       this.showDetail = true
+    },
+
+    addInterestMarker(interest) {
+      if (interest.latitude && interest.longitude) {
+        const lat = parseFloat(interest.latitude)
+        const lng = parseFloat(interest.longitude)
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const position = [lat, lng]
+          if (!this.interestMarkerPositions.some(pos => 
+            pos[0] === position[0] && pos[1] === position[1]
+          )) {
+            this.interestMarkerPositions.push(position)
+          }
+        }
+      }
+    },
+
+    removeInterestMarker(interest) {
+      if (interest.latitude && interest.longitude) {
+        const lat = parseFloat(interest.latitude)
+        const lng = parseFloat(interest.longitude)
+        this.interestMarkerPositions = this.interestMarkerPositions.filter(pos => 
+          pos[0] !== lat || pos[1] !== lng
+        )
+      }
+    },
+
+    clearInterestMarkers() {
+      this.interestMarkerPositions = []
     },
   },
 })

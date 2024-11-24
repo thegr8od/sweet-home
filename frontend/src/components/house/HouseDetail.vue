@@ -7,13 +7,33 @@
       </div>
 
       <div class="detail-header">
-        <h2 class="apt-name">{{ selectedHouse?.aptName }}</h2>
+        <div class="title-area">
+          <h2 class="apt-name box-sizing m-0">{{ selectedHouse?.aptName }}</h2>
+          <button 
+            @click="toggleInterest" 
+            class="interest-button"
+            :class="{ 'is-interested': isInterested }"
+          >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            :fill="isInterested ? 'currentColor' : 'none'"
+            stroke="currentColor" 
+            class="heart-icon"
+          >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
+        </button>
+      </div>
+       
         <p class="apt-location">{{ selectedHouse?.legalDong }}</p>
       </div>
 
       <div class="detail-content" v-if="aptInfo">
         <div class="info-section">
-          <h3>기본 정보</h3>
+          <div class="info-header">
+            <h3>기본 정보</h3>
+          </div>
           <div class="info-grid">
             <div class="info-item">
               <span class="label">건축년도</span>
@@ -77,6 +97,8 @@
 
 <script>
 import { useHouseStore } from '@/stores/houseStore'
+import { useInterestStore } from '@/stores/interestStore'
+import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { ref, watch, computed, nextTick } from 'vue'
 import DealTable from './detail/DealTable.vue'
@@ -111,30 +133,50 @@ export default {
   setup() {
     const houseStore = useHouseStore()
     const aptBoardStore = useAptBoardStore()
+    const userStore = useUserStore()
+    const interestStore = useInterestStore()
+    
     const { selectedHouse, aptInfo, aptDeals } = storeToRefs(houseStore)
     const randomImage = ref('')
     const priceChart = ref(null)
     let chart = null
     const selectedArea = ref('all')
+    const isLoading = ref(false)
 
-    const images = [
-      apt1,
-      apt2,
-      apt3,
-      apt4,
-      apt5,
-      apt6,
-      apt7,
-      apt8,
-      apt9,
-      apt10,
-      apt11,
-      apt12,
-      apt13,
-      apt14,
-    ]
+    // 관심 등록 여부 확인 computed 추가
+    const isInterested = computed(() => {
+      return selectedHouse.value && interestStore.isInterested(selectedHouse.value.aptSeq)
+    })
 
-    // selectedHouse가 변경될 때마다 새로운 랜덤 이미지 선택
+    // 관심 등록/해제 토글 함수 추가
+    const toggleInterest = async () => {
+      if (!userStore.isLoggedIn) {
+        alert('로그인이 필요한 서비스입니다.')
+        return
+      }
+
+      if (!selectedHouse.value?.aptSeq) return
+
+      isLoading.value = true
+      try {
+        if (isInterested.value) {
+          await interestStore.removeFromInterest(selectedHouse.value.aptSeq)
+        } else {
+          await interestStore.addToInterest(selectedHouse.value.aptSeq)
+        }
+      } catch (error) {
+        console.error('관심 아파트 처리 실패:', error)
+        alert(error.message || '처리 중 오류가 발생했습니다.')
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+
+    // 기존의 이미지 관련 코드
+    const images = [apt1, apt2, apt3, apt4, apt5, apt6, apt7, apt8,
+                   apt9, apt10, apt11, apt12, apt13, apt14]
+
     watch(
       selectedHouse,
       () => {
@@ -142,16 +184,21 @@ export default {
         randomImage.value = images[randomIndex]
       },
       { immediate: true },
-    ) // immediate: true로 설정하여 초기 로드시에도 실행
+    )
 
     // 고유한 전용면적 목록 계산
     const uniqueAreas = computed(() => {
       if (!aptDeals.value || aptDeals.value.length === 0) return []
       const areas = [...new Set(aptDeals.value.map((deal) => deal.excluUseAr))]
-      return areas.filter((area) => area).sort((a, b) => a - b) // null, undefined 제거 후 정렬
+      return areas.filter((area) => area).sort((a, b) => a - b)
     })
 
-    // 차트 데이터 준비 함수 수정
+    // 첫 번째 게시글을 가져오는 computed 속성
+    const firstBoard = computed(() => {
+      return aptBoardStore.boards[0] || null
+    })
+
+    // 차트 관련 함수들 유지
     const prepareChartData = (deals) => {
       if (!deals || deals.length === 0) return null
 
@@ -194,7 +241,6 @@ export default {
       }
     }
 
-    // 차트 업데이트 함수 수정
     const updateChart = () => {
       if (chart) {
         chart.destroy()
@@ -278,7 +324,7 @@ export default {
       })
     }
 
-    // watch 부분 수정
+    // 차트 관련 watch 유지
     watch(
       [aptDeals, selectedArea, () => houseStore.showCommentList],
       ([newDeals, newArea, showComments]) => {
@@ -296,12 +342,7 @@ export default {
       { immediate: true, deep: true },
     )
 
-    // 첫 번째 게시글을 가져오는 computed 속성 추가
-    const firstBoard = computed(() => {
-      return aptBoardStore.boards[0] || null
-    })
-
-    // selectedHouse가 변경될 때 게시글 목록을 가져오는 watch 추가
+    // selectedHouse가 변경될 때 게시글 목록을 가져오는 watch
     watch(
       () => selectedHouse.value?.aptSeq,
       async (newAptSeq) => {
@@ -325,12 +366,53 @@ export default {
       updateChart,
       houseStore,
       firstBoard,
+      userStore,
+      isInterested,
+      toggleInterest,
+      isLoading,
     }
   },
 }
 </script>
 
 <style scoped>
+
+
+/* 기존 스타일에 추가 */
+.interest-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.interest-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.interest-button:not(:disabled):hover {
+  color: #ef4444;
+}
+
+.interest-button.is-interested {
+  color: #ef4444;
+}
+
+.heart-icon {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.5;
+}
+
+.interest-button:not(.is-interested):hover .heart-icon {
+  fill: rgba(239, 68, 68, 0.1);
+}
 .house-detail {
   padding: 0;
 }
@@ -396,7 +478,6 @@ export default {
 .apt-name {
   font-size: 24px;
   font-weight: 600;
-  margin: 0 0 8px 0;
   color: #333;
 }
 
@@ -477,7 +558,8 @@ export default {
 .title-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  /* gap: 12px; */
 }
 
 .area-select {

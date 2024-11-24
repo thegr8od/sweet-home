@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useInterestStore } from './interestStore'
 
 export const useUserStore = defineStore(
   'user',
@@ -20,6 +21,7 @@ export const useUserStore = defineStore(
         this.isLoggedIn = true
         this.userId = userId
         this.userInfo = userInfo
+        this.initializeLoginState()
       },
 
       setLogout() {
@@ -33,10 +35,16 @@ export const useUserStore = defineStore(
         this.userInfo = userInfo
       },
 
-      initializeLoginState() {
+      async initializeLoginState() {
         const token = localStorage.getItem('token')
         if (token) {
           this.isLoggedIn = true
+          const interestStore = useInterestStore()
+          try {
+            await interestStore.fetchInterestList()
+          } catch (error) {
+            console.error('관심 목록 초기화 실패:', error)
+          }
         } else {
           this.setLogout()
         }

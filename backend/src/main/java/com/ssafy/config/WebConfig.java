@@ -41,7 +41,12 @@ public class WebConfig implements WebMvcConfigurer {
 					"/aptboard/comment/*",      // POST - 댓글 작성
 					"/aptboard/comment/*/like", // POST - 댓글 좋아요
 					"/aptboard/comment/*/unlike", // DELETE - 댓글 좋아요 취소
-					"/aptboard/*"              // PUT, DELETE - 게시글 수정/삭제
+					"/aptboard/*",              // PUT, DELETE - 게시글 수정/삭제
+					
+					// 관심 아파트 관련
+					"/interest/add",
+					"/interest/delete/*",
+					"/interest/list"
 				)
 				.excludePathPatterns(
 					// 사용자 인증

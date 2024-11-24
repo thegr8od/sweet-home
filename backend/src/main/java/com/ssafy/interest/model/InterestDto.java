@@ -1,31 +1,21 @@
 package com.ssafy.interest.model;
 
-public class InterestDto {
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-	private String userId;
-	private String aptSeq;
-	public String getUserId() {
-		return userId;
-	}
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-	public String getAptSeq() {
-		return aptSeq;
-	}
-	public void setAptSeq(String aptSeq) {
-		this.aptSeq = aptSeq;
-	}
-	public InterestDto(String userId, String aptSeq) {
-		super();
-		this.userId = userId;
-		this.aptSeq = aptSeq;
-	}
-	@Override
-	public String toString() {
-		return "InterestDto [userId=" + userId + ", aptSeq=" + aptSeq + "]";
-	}
-	
-	
-	
+@Getter
+@Setter
+@NoArgsConstructor  // 기본 생성자
+@AllArgsConstructor // 모든 필드를 파라미터로 받는 생성자
+@ToString
+public class InterestDto {
+    private String userId;
+    private String aptSeq;
+    private String aptName;    // 추가
+	private String legalDong; // 추가
+    private String latitude;   // 추가
+    private String longitude;  // 추가
 }
