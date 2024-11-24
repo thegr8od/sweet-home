@@ -215,7 +215,7 @@ const errors = ref({
 const isFormValid = ref(true)
 const profileImageFile = ref(null)
 const profileImageUrl = ref(null)
-const defaultProfileImage = '/default-profile.png' // 기본 프로필 이미지 경로
+const defaultProfileImage = new URL('/default-profile.jpg', import.meta.url).href
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'

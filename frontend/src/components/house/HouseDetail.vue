@@ -69,9 +69,9 @@
           <div class="board-header">
             <h3>단지글</h3>
           </div>
-          <HouseComment 
-            v-if="firstBoard" 
-            :board="firstBoard" 
+          <HouseComment
+            v-if="firstBoard"
+            :board="firstBoard"
             :is-first="true"
           />
           <div v-else class="p-4 text-center text-gray-500">

@@ -8,11 +8,14 @@
       <RouterView />
     </div>
   </main>
+
+  <ChatBot />
 </template>
 
 <script setup>
 import { RouterView } from 'vue-router'
 import NavBar from './components/layout/NavBar.vue'
+import ChatBot from './components/chat/ChatBot.vue'
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { apiInstance } from '@/api/index'
@@ -40,7 +43,14 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style>
+.chat-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 99999 !important;
+}
+
 header {
   background-color: #fff;
   padding: 10px 20px;
@@ -65,3 +75,4 @@ button {
   margin: 0 3px;
 }
 </style>
+

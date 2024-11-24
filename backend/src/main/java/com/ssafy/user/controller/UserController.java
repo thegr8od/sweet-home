@@ -134,7 +134,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
             }
 
-            // 프로필 이미지 URL 설정
+
             if (userDto.getProfileImage() != null && !userDto.getProfileImage().isEmpty()) {
                 // 전체 URL 경로 설정
                 userDto.setProfileImageUrl("/user/profile-image/" + userId);
