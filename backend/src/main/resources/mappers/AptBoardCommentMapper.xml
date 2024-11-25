@@ -65,10 +65,10 @@
     </update>
     
     <update id="deleteComment" parameterType="int">
-        UPDATE aptboard_comments
-        SET 
-            is_deleted = true,
-            deleted_at = NOW()
-        WHERE id = #{id};
-    </update>
+    UPDATE aptboard_comments
+    SET 
+        is_deleted = true,
+        deleted_at = NOW()
+    WHERE id = #{id};
+</update>
 </mapper> 

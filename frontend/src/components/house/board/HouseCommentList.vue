@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref } from 'vue'
 import { ArrowLeftIcon, PencilIcon } from 'lucide-vue-next'
 import { useHouseStore } from '@/stores/houseStore'
 import { useAptBoardStore } from '@/stores/aptBoardStore'
@@ -63,6 +63,8 @@ const router = useRouter()
 const houseStore = useHouseStore()
 const aptBoardStore = useAptBoardStore()
 const userStore = useUserStore()
+
+const comments = ref([])
 
 // 기본 프로필 이미지 추가
 const defaultProfileImage =
@@ -125,6 +127,24 @@ const handleWritingClick = () => {
     return
   }
   houseStore.showCommentWritingPanel()
+}
+
+const handleCommentUpdated = (updatedComment) => {
+  // 댓글 목록 갱신 로직
+  const index = comments.value.findIndex((c) => c.id === updatedComment.id)
+  if (index !== -1) {
+    comments.value[index] = updatedComment
+  }
+}
+
+const handleCommentDeleted = (commentId) => {
+  // 댓글 목록에서 삭제된 댓글 제거
+  comments.value = comments.value.filter((c) => c.id !== commentId)
+
+  // 게시글 목록 갱신
+  if (aptBoardStore.currentBoard) {
+    aptBoardStore.currentBoard.commentsCount--
+  }
 }
 </script>
 

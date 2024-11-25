@@ -16,11 +16,21 @@
                 <div class="font-medium">{{ board.userId }}</div>
                 <div class="text-xs text-gray-500">관심등록 | 팔로워 0</div>
               </div>
-              <button
-                class="text-sm text-blue-500 border border-blue-500 rounded-full px-3 py-1 hover:bg-blue-50 transition-colors"
-              >
-                + 팔로우
-              </button>
+              <div class="flex items-center gap-2">
+                <div v-if="isMyPost" class="flex items-center gap-2">
+                  <button class="text-sm text-gray-500 hover:text-blue-500" @click="handleEdit">
+                    수정
+                  </button>
+                  <button class="text-sm text-gray-500 hover:text-red-500" @click="handleDelete">
+                    삭제
+                  </button>
+                </div>
+                <button
+                  class="text-sm text-blue-500 border border-blue-500 rounded-full px-3 py-1 hover:bg-blue-50"
+                >
+                  + 팔로우
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -28,10 +38,30 @@
 
       <!-- Post Content -->
       <div class="mb-4">
-        <h3 class="text-lg font-medium mb-2">{{ board.title }}</h3>
-        <p class="text-sm text-gray-700 mb-2">
-          {{ board.content }}
-        </p>
+        <div v-if="isEditing">
+          <input v-model="editTitle" class="w-full p-2 mb-2 border rounded" placeholder="제목" />
+          <textarea
+            v-model="editContent"
+            class="w-full p-2 border rounded resize-none"
+            rows="4"
+            placeholder="내용"
+          ></textarea>
+          <div class="flex justify-end gap-2 mt-2">
+            <button class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800" @click="cancelEdit">
+              취소
+            </button>
+            <button
+              class="px-3 py-1 text-sm text-white bg-blue-500 rounded hover:bg-blue-600"
+              @click="saveEdit"
+            >
+              저장
+            </button>
+          </div>
+        </div>
+        <div v-else>
+          <h3 class="text-lg font-medium mb-2">{{ board.title }}</h3>
+          <p class="text-sm text-gray-700 mb-2">{{ board.content }}</p>
+        </div>
         <div class="flex justify-between items-center text-xs text-gray-500">
           <span>단지글 · {{ board.aptName }} · 아파트</span>
           <span>{{ formatDate(board.createdAt) }}</span>
@@ -175,6 +205,58 @@ const handleLike = async () => {
 
 const showReComments = () => {
   houseStore.showReComments(props.board.id)
+}
+
+// 수정 관련 상태
+const isEditing = ref(false)
+const editTitle = ref('')
+const editContent = ref('')
+
+// 자신의 게시글인지 확인
+const isMyPost = computed(() => {
+  return userStore.isLoggedIn && userStore.userId === props.board.userId
+})
+
+// 수정 시작
+const handleEdit = () => {
+  editTitle.value = props.board.title
+  editContent.value = props.board.content
+  isEditing.value = true
+}
+
+// 수정 취소
+const cancelEdit = () => {
+  isEditing.value = false
+  editTitle.value = ''
+  editContent.value = ''
+}
+
+// 수정 저장
+const saveEdit = async () => {
+  try {
+    await aptBoardStore.updateBoardContent(props.board.id, {
+      title: editTitle.value,
+      content: editContent.value,
+    })
+    isEditing.value = false
+    alert('게시글이 수정되었습니다.')
+  } catch (error) {
+    console.error('게시글 수정 중 에러:', error)
+    alert('게시글 수정에 실패했습니다.')
+  }
+}
+
+// 삭제
+const handleDelete = async () => {
+  if (!confirm('정말 삭제하시겠습니까?')) return
+
+  try {
+    await aptBoardStore.removeBoardById(props.board.id)
+    alert('게시글이 삭제되었습니다.')
+  } catch (error) {
+    console.error('게시글 삭제 중 에러:', error)
+    alert('게시글 삭제에 실패했습니다.')
+  }
 }
 </script>
 

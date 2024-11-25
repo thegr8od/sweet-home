@@ -14,12 +14,39 @@
           <span class="text-xs text-gray-500">팔로워 0</span>
         </div>
       </div>
-      <button class="text-xs text-blue-500 hover:text-blue-600">+ 팔로우</button>
+      <div class="flex items-center gap-2">
+        <!-- 수정/삭제 버튼 (자신의 댓글일 경우만 표시) -->
+        <div v-if="isMyComment" class="flex items-center gap-2">
+          <button class="text-xs text-gray-500 hover:text-blue-500" @click="startEdit">수정</button>
+          <button class="text-xs text-gray-500 hover:text-red-500" @click="handleDelete">
+            삭제
+          </button>
+        </div>
+        <button class="text-xs text-blue-500 hover:text-blue-600">+ 팔로우</button>
+      </div>
     </div>
 
     <!-- Comment Content -->
     <div class="mb-3">
-      <p class="text-sm text-gray-700 mb-2">
+      <div v-if="isEditing" class="mb-2">
+        <textarea
+          v-model="editContent"
+          class="w-full p-2 border rounded-lg text-sm"
+          rows="3"
+        ></textarea>
+        <div class="flex justify-end gap-2 mt-2">
+          <button class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800" @click="cancelEdit">
+            취소
+          </button>
+          <button
+            class="px-3 py-1 text-xs text-white bg-blue-500 rounded hover:bg-blue-600"
+            @click="saveEdit"
+          >
+            저장
+          </button>
+        </div>
+      </div>
+      <p v-else class="text-sm text-gray-700 mb-2">
         {{ comment.content }}
       </p>
       <div class="flex justify-between items-center text-xs text-gray-500">
@@ -41,11 +68,13 @@
 import { ThumbsUpIcon } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
-import { likeComment, unlikeComment } from '@/api/aptBoard'
-import { computed } from 'vue'
+import { likeComment, unlikeComment, updateComment, deleteComment } from '@/api/aptBoard'
+import { ref, computed } from 'vue'
+import { useAptBoardStore } from '@/stores/aptBoardStore'
 
 const router = useRouter()
 const userStore = useUserStore()
+const aptBoardStore = useAptBoardStore()
 
 const props = defineProps({
   comment: {
@@ -53,6 +82,63 @@ const props = defineProps({
     required: true,
   },
 })
+
+// emit 정의 - 수정/삭제 이벤트 추가
+const emit = defineEmits(['like-updated', 'comment-updated', 'comment-deleted'])
+
+// 수정 관련 상태
+const isEditing = ref(false)
+const editContent = ref('')
+
+// 자신의 댓글인지 확인
+const isMyComment = computed(() => {
+  return userStore.isLoggedIn && userStore.userId === props.comment.userId
+})
+
+// 수정 시작
+const startEdit = () => {
+  editContent.value = props.comment.content
+  isEditing.value = true
+}
+
+// 수정 취소
+const cancelEdit = () => {
+  isEditing.value = false
+  editContent.value = ''
+}
+
+// 수정 저장
+const saveEdit = async () => {
+  if (!editContent.value.trim()) {
+    alert('내용을 입력해주세요.')
+    return
+  }
+
+  try {
+    await updateComment(props.comment.id, { content: editContent.value })
+    props.comment.content = editContent.value
+    isEditing.value = false
+    emit('comment-updated', props.comment)
+    alert('댓글이 수정되었습니다.')
+  } catch (error) {
+    console.error('댓글 수정 중 에러:', error)
+    alert('댓글 수정에 실패했습니다.')
+  }
+}
+
+// 삭제
+const handleDelete = async () => {
+  if (!confirm('정말 삭제하시겠습니까?')) return
+
+  try {
+    await aptBoardStore.deleteComment(props.comment.boardId, props.comment.id)
+    emit('comment-deleted', props.comment.id)
+    alert('댓글이 삭제되었습니다.')
+  } catch (error) {
+    console.error('댓글 삭제 중 에러:', error)
+    alert('댓글 삭제에 실패했습니다.')
+  }
+}
 
 // 기본 프로필 이미지
 const defaultProfileImage =
@@ -144,9 +230,6 @@ const formatDate = (dateString) => {
 
   return `${year}.${month}.${day}`
 }
-
-// emit 정의
-const emit = defineEmits(['like-updated'])
 </script>
 
 <style scoped>
@@ -154,8 +237,18 @@ const emit = defineEmits(['like-updated'])
   padding: 12px 16px;
 }
 
-/* 좋아요 버튼 스타일 */
 .liked {
   color: #3b82f6;
+}
+
+textarea {
+  resize: none;
+  min-height: 60px;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 </style>
