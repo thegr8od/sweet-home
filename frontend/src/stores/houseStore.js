@@ -6,7 +6,10 @@ import {
   houseDealListByAptSeq,
   getHouseDealsByMapBounds,
   getHouseInfoByAptName,
-} from '@/api/house.js'
+  } from '@/api/house.js'
+import { useInterestStore } from '@/stores/interestStore'
+=======
+
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -24,16 +27,19 @@ export const useHouseStore = defineStore('houseStore', {
     isCommentWritingPanelVisible: false,
     showCommentWriting: false,
     selectedBoardId: null,
+    houseDetails: [],
+    updateMapFlag: true,
   }),
 
   actions: {
     // 지도 영역이 변경될 때 호출되는 함수
     async onBoundsChanged(bounds) {
-      // this.clearHouses()
       console.log(bounds)
+      const interestStore = useInterestStore()
+
 
       try {
-        const response = await getHouseDealsByMapBounds(
+        await getHouseDealsByMapBounds(
           bounds,
           ({ data }) => {
             if (data && Array.isArray(data)) {
@@ -43,10 +49,8 @@ export const useHouseStore = defineStore('houseStore', {
                 legalDong: house.legalDong,
                 latitude: house.latitude,
                 longitude: house.longitude,
-                // tradeAmount: house.tradeAmount,
-                // dealYear: house.dealYear,
-                // dealMonth: house.dealMonth,
-                // dealDay: house.dealDay
+                maxPrice: house.maxPrice,
+                maxPriceArea: house.maxPriceArea,
               }))
 
               // markerPositions 업데이트 - 유효한 위도/경도만 필터링
@@ -59,8 +63,20 @@ export const useHouseStore = defineStore('houseStore', {
                 })
                 .filter((position) => position !== null)
 
+
+              // 각 아파트의 최고가 정보 저장
+              this.houseDetails = data.map((house) => ({
+                maxPrice: house.maxPrice || '?',
+                maxPriceArea: house.maxPriceArea || '?',
+              }))
+
+              // 관심 매물 정보 업데이트
+              interestStore.updateInterestDetails(this.houses, this.houseDetails)
+
+
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
+              console.log('houseDetails:', this.houseDetails)
             }
           },
           (error) => {
@@ -127,11 +143,13 @@ export const useHouseStore = defineStore('houseStore', {
     async getDetail(aptSeq) {
       try {
         console.log('상세정보 조회 aptSeq:', aptSeq)
-        // 아파트 정보와 거래 내역을 순차적으로 조회
-        await this.getAptInfo(aptSeq)
-        await this.getAptDeals(aptSeq)
+        // Promise.all을 사용하여 두 요청을 동시에 처리
+        await Promise.all([this.getAptInfo(aptSeq), this.getAptDeals(aptSeq)])
       } catch (error) {
         console.error('아파트 상세 정보 조회 실패:', error)
+        // 에러 발생 시 상태 초기화
+        this.aptInfo = null
+        this.aptDeals = []
       }
     },
 
@@ -219,6 +237,7 @@ export const useHouseStore = defineStore('houseStore', {
       this.showCommentWriting = false
       this.aptInfo = null
       this.aptDeals = []
+      this.houseDetails = []
     },
 
     showComments() {
@@ -298,6 +317,10 @@ export const useHouseStore = defineStore('houseStore', {
     clearMarkerPositions() {
       this.markerPositions = []
     },
+
+
+    setUpdateMapFlag(flag) {
+      this.updateMapFlag = flag
 
     async searchByAptName(aptName) {
       this.clearHouses()

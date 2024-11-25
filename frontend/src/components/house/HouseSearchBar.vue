@@ -106,7 +106,8 @@ import { saveSearchLog, getPopularSearchKeywords } from '@/api/searchLog'
 
 export default {
   name: 'HouseSearchBar',
-  setup() {
+  emits: ['moveMap', 'updateArea'],
+  setup(props, { emit }) {
     const addressStore = useAddressStore()
     const houseStore = useHouseStore()
     const searchQuery = ref('')
@@ -213,6 +214,42 @@ export default {
         }
         console.log('address:', address)
         await houseStore.getHouseListByAddress(address)
+
+        // 마커 위치들을 기반으로 bounds 계산
+        if (houseStore.markerPositions.length > 0) {
+          // bounds 객체 생성
+          const bounds = {
+            minLat: Number.MAX_VALUE,
+            maxLat: Number.MIN_VALUE,
+            minLng: Number.MAX_VALUE,
+            maxLng: Number.MIN_VALUE,
+          }
+
+          // 모든 마커의 위치를 포함하는 bounds 계산
+          houseStore.markerPositions.forEach((position) => {
+            bounds.minLat = Math.min(bounds.minLat, position[0])
+            bounds.maxLat = Math.max(bounds.maxLat, position[0])
+            bounds.minLng = Math.min(bounds.minLng, position[1])
+            bounds.maxLng = Math.max(bounds.maxLng, position[1])
+          })
+
+          // 중심점 계산
+          const center = {
+            lat: (bounds.minLat + bounds.maxLat) / 2,
+            lng: (bounds.minLng + bounds.maxLng) / 2,
+          }
+
+          // 지도 이동 및 bounds 설정
+          emit('moveMap', {
+            center,
+            bounds,
+            level: 5, // 적절한 줌 레벨
+          })
+        }
+
+        // 지도 영역 업데이트
+        emit('updateArea')
+
       }
     }
 
