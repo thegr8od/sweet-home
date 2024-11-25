@@ -20,6 +20,7 @@ const interestStore = useInterestStore()
 const mapContainer = ref(null)
 let map = null
 let markers = []
+let overlay_markers = []
 let interestMarkers = []
 let infowindow = null
 let clusterer = null
@@ -145,7 +146,7 @@ function initMap() {
   clusterer = new window.kakao.maps.MarkerClusterer({
     map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체
     averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정
-    minLevel: 5, // 클러스터 할 최소 지도 레벨
+    minLevel: 8, // 클러스터 할 최소 지도 레벨
   })
 
   // 먼저 일반 마커 생성
@@ -167,6 +168,15 @@ function initMap() {
     // 인포윈도우가 열려있다면 닫기
     if (infowindow) {
       infowindow.close()
+    }
+    var level = map.getLevel()
+    if (level >= 8) {
+      // 기존 일반 마커만 제거
+      overlay_markers.forEach((marker) => marker.setMap(null))
+      overlay_markers = []
+    } else {
+      markers.forEach((marker) => marker.setMap(null))
+      markers = []
     }
     updateArea()
   })
@@ -228,99 +238,258 @@ function updateArea() {
 // 마커 생성 함수 수정
 function createMarker(position, index, isInterest) {
   const markerPosition = new window.kakao.maps.LatLng(position[0], position[1])
+  var level = map.getLevel()
+
+  // 현재 선택된 위치인지 확인
+  const isSelected =
+    selectedPosition.value &&
+    selectedPosition.value.lat === position[0] &&
+    selectedPosition.value.lng === position[1]
 
   let marker
   if (isInterest) {
-    // 관심 마커 이미지 설정 - 크기를 일반 마커와 비슷하게 조정
-    const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png'
-    const imageSize = new window.kakao.maps.Size(27.42, 40) // 크기를 24x35로 변경
-    const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize)
-
-    marker = new window.kakao.maps.Marker({
-      position: markerPosition,
-      image: markerImage,
-      zIndex: 2,
-    })
-  } else {
-    // 일반 마커는 기본 마커 사용
-    marker = new window.kakao.maps.Marker({
-      position: markerPosition,
-      zIndex: 1,
-    })
-  }
-
-  // 마커를 지도에 표시
-  // marker.setMap(map)
-
-  // 마커 클릭 이벤트
-  window.kakao.maps.event.addListener(marker, 'click', () => {
-    // 관심 마커인 경우와 일반 마커인 경우를 구분
-    updateArea()
-    let targetHouse
-    if (isInterest) {
-      // const interestStore = useInterestStore()
-      targetHouse = interestStore.interests.find(
+    if (level < 8) {
+      // 오버레이 마커 사용
+      const house = interestStore.interests.find(
         (interest) =>
           parseFloat(interest.latitude) === position[0] &&
           parseFloat(interest.longitude) === position[1],
       )
-      // 관심 마커 클릭 시 해당 위치로 이동하고 줌 레벨 조정
-      map.setLevel(3)
-      map.panTo(markerPosition)
-    } else {
-      targetHouse = houses.value[index]
-    }
 
-    if (targetHouse) {
-      houseStore.setSelectedPosition({
-        lat: position[0],
-        lng: position[1],
+      const content = document.createElement('div')
+      content.className = `inline-flex flex-col items-center w-auto cursor-pointer ${
+        isSelected ? 'transform scale-120' : ''
+      }`
+      content.style.filter = isSelected ? 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2))' : ''
+
+      // Top section (빨간색 배경으로 변경)
+      const topSection = document.createElement('div')
+      topSection.className =
+        'w-16 bg-red-500 text-white px-2 py-0.5 rounded-t-md text-xs font-medium text-center'
+      topSection.innerHTML = `<span>${house?.area || '?'}평</span>`
+
+      // Bottom section (테두리 색상도 빨간색으로 변경)
+      const bottomSection = document.createElement('div')
+      bottomSection.className =
+        'w-16 bg-white text-red-500 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-red-500 border-t-0'
+      bottomSection.innerHTML = `<span>${house?.dealType || '매'} ${house?.recentPrice || '?'}억</span>`
+
+      // Triangle pointer (빨간색 테두리로 변경)
+      const triangle = document.createElement('div')
+      triangle.className =
+        'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white'
+      triangle.style.filter = 'drop-shadow(0 1px 0 rgb(239 68 68))' // rgb(239 68 68)는 red-500 색상값
+
+      content.appendChild(topSection)
+      content.appendChild(bottomSection)
+      content.appendChild(triangle)
+
+      content.onclick = () => {
+        handleMarkerClick(position, index, true)
+      }
+
+      const overlay_marker = new window.kakao.maps.CustomOverlay({
+        position: markerPosition,
+        content: content,
+        zIndex: isSelected ? 3 : isInterest ? 2 : 1,
       })
 
-      houseStore.setSelectedHouse(targetHouse)
+      overlay_marker.setMap(map)
+      overlay_markers.push(overlay_marker)
+    } else {
+      // 일반 마커 사용
+      const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png'
+      const imageSize = new window.kakao.maps.Size(
+        isSelected ? 30.16 : 27.42, // 선택된 경우 크기 증가
+        isSelected ? 44 : 40,
+      )
+      const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize)
 
-      if (targetHouse.aptSeq) {
-        console.log('맵: aptSeq:', targetHouse.aptSeq)
-        houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
+      marker = new window.kakao.maps.Marker({
+        position: markerPosition,
+        image: markerImage,
+        zIndex: 2,
+      })
+
+      if (isSelected) {
+        // 선택된 마커의 경우 크기 증가
+        const markerImage = new window.kakao.maps.MarkerImage(
+          marker.getImage().src,
+          new window.kakao.maps.Size(35, 45), // 기본 크기보다 약간 크게
+          marker.getImage().options,
+        )
+        marker.setImage(markerImage)
       }
-    }
-  })
 
-  if (isInterest) {
-    interestMarkers.push(marker)
+      marker.setMap(map)
+      interestMarkers.push(marker)
+      addMarkerClickEvent(marker, position, index, true)
+    }
   } else {
-    markers.push(marker)
+    // 레벨이 5미만 (오버레이 마커 사용)
+    if (level < 8) {
+      const house = houses.value[index]
+      // 클릭 가능한 div 요소 생성
+      const content = document.createElement('div')
+      content.className = `inline-flex flex-col items-center w-auto cursor-pointer ${
+        isSelected ? 'transform scale-120' : ''
+      }`
+      content.style.filter = isSelected ? 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2))' : ''
+
+      // Top section
+      const topSection = document.createElement('div')
+      topSection.className =
+        'w-16 bg-blue-600 text-white px-2 py-0.5 rounded-t-md text-xs font-medium text-center'
+      topSection.innerHTML = `<span>${house.area || '?'}평</span>`
+
+      // Bottom section
+      const bottomSection = document.createElement('div')
+      bottomSection.className =
+        'w-16 bg-white text-blue-600 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-blue-600 border-t-0'
+      bottomSection.innerHTML = `<span>${house.dealType || '매'} ${house.recentPrice || '?'}억</span>`
+
+      // Triangle pointer
+      const triangle = document.createElement('div')
+      triangle.className =
+        'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white'
+      triangle.style.filter = 'drop-shadow(0 1px 0 rgb(37 99 235))'
+
+      // 요소들을 조합
+      content.appendChild(topSection)
+      content.appendChild(bottomSection)
+      content.appendChild(triangle)
+
+      // 클릭 이벤트 추가
+      content.onclick = () => {
+        handleMarkerClick(position, index, false)
+      }
+
+      const overlay_marker = new window.kakao.maps.CustomOverlay({
+        position: markerPosition,
+        content: content,
+        zIndex: 1,
+      })
+
+      overlay_markers.push(overlay_marker)
+      overlay_marker.setMap(map)
+    }
+    // 레벨이 5이상 (클러스터 사용)
+    else {
+      // 일반 마커는 기본 마커 사용
+      marker = new window.kakao.maps.Marker({
+        position: markerPosition,
+        zIndex: 1,
+      })
+      // marker.setMap(map)
+      markers.push(marker) // markers 배열은 클러스터에만 사용됨.
+      addMarkerClickEvent(marker, position, index, false)
+    }
+  }
+
+  // markers.push(marker)
+
+  // // 마커 클릭 이벤트
+  // window.kakao.maps.event.addListener(marker, 'click', () => {
+  //   // 관심 마커인 경우와 일반 마커인 경우를 구분
+  //   // updateArea()
+  //   let targetHouse
+  //   if (isInterest) {
+  //     // const interestStore = useInterestStore()
+  //     targetHouse = interestStore.interests.find(
+  //       (interest) =>
+  //         parseFloat(interest.latitude) === position[0] &&
+  //         parseFloat(interest.longitude) === position[1],
+  //     )
+  //     // 관심 마커 클릭 시 해당 위치로 이동하고 줌 레벨 조정
+  //     map.setLevel(3)
+  //     map.panTo(markerPosition)
+  //   } else {
+  //     targetHouse = houses.value[index]
+  //   }
+
+  //   if (targetHouse) {
+  //     houseStore.setSelectedPosition({
+  //       lat: position[0],
+  //       lng: position[1],
+  //     })
+
+  //     houseStore.setSelectedHouse(targetHouse)
+
+  //     if (targetHouse.aptSeq) {
+  //       console.log('맵: aptSeq:', targetHouse.aptSeq)
+  //       houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
+  //     }
+  //   }
+  //   updateArea()
+  // })
+
+  // if (isInterest) {
+  //   interestMarkers.push(marker)
+  // } else {
+  //   markers.push(marker)
+  // }
+}
+
+function addMarkerClickEvent(marker, position, index, isInterest) {
+  window.kakao.maps.event.addListener(marker, 'click', () => {
+    handleMarkerClick(position, index, isInterest)
+  })
+}
+
+function handleMarkerClick(position, index, isInterest) {
+  let targetHouse
+  if (isInterest) {
+    targetHouse = interestStore.interests.find(
+      (interest) =>
+        parseFloat(interest.latitude) === position[0] &&
+        parseFloat(interest.longitude) === position[1],
+    )
+  } else {
+    targetHouse = houses.value[index]
+  }
+
+  if (targetHouse) {
+    houseStore.setSelectedPosition({
+      lat: position[0],
+      lng: position[1],
+    })
+
+    houseStore.setSelectedHouse(targetHouse)
+
+    if (targetHouse.aptSeq) {
+      houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
+    }
   }
 }
 
 // 일반 마커만 업데이트하는 함수 수정
 function updateAllMarkers(positions) {
-  // 기존 일반 마커만 제거
+  // 기존 마커들 제거
   markers.forEach((marker) => marker.setMap(null))
   markers = []
+  overlay_markers.forEach((marker) => marker.setMap(null))
+  overlay_markers = []
+  interestMarkers.forEach((marker) => marker.setMap(null))
+  interestMarkers = []
 
-  // 일반 마커 생성 (zIndex를 1로 설정)
+  // 일반 마커 생성
   positions.forEach((position, index) => {
     createMarker(position, index, false)
   })
 
-  // 관심 마커 재생성 (zIndex를 2로 설정하여 항상 위에 표시)
+  // 관심 마커 재생성
   if (interestMarkerPositions.value.length > 0) {
     interestMarkerPositions.value.forEach((position, index) => {
       createMarker(position, index, true)
     })
   }
 
-  clusterer.addMarkers(markers)
-
-  // // 일반 마커가 있을 경우에만 bounds 설정
-  // if (positions.length > 0) {
-  //   const bounds = new window.kakao.maps.LatLngBounds()
-  //   positions.forEach((position) => {
-  //     bounds.extend(new window.kakao.maps.LatLng(position[0], position[1]))
-  //   })
-  //   map.setBounds(bounds)
-  // }
+  var level = map.getLevel()
+  if (level >= 8) {
+    clusterer.addMarkers(markers.concat(interestMarkers))
+  } else {
+    clusterer.clear()
+  }
 }
 
 // 위치로 이동하는 메서드
@@ -384,7 +553,7 @@ function showInfoWindow(position) {
             ">
               <div style="color: #64748b;">
                 <span style="color: #94a3b8;">건축년도</span><br>
-                <strong>${houseStore.aptInfo?.buildYear || '정보없음'}</strong>
+                <strong>${houseStore.aptInfo?.buildYear || '정보음'}</strong>
               </div>
               <div style="color: #64748b;">
                 <span style="color: #94a3b8;">전용면적</span><br>

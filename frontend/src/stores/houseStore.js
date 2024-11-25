@@ -1,6 +1,11 @@
 // stores/houseStore.js
 import { defineStore } from 'pinia'
-import { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq, getHouseDealsByMapBounds } from '@/api/house.js'
+import {
+  houseDealListByAddress,
+  getHouseInfoByAptSeq,
+  houseDealListByAptSeq,
+  getHouseDealsByMapBounds,
+} from '@/api/house.js'
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -21,38 +26,32 @@ export const useHouseStore = defineStore('houseStore', {
   }),
 
   actions: {
-
     // 지도 영역이 변경될 때 호출되는 함수
-    async onBoundsChanged (bounds) {
-      // this.clearHouses()
+    async onBoundsChanged(bounds) {
       console.log(bounds)
-     
+
       try {
-        const response = await getHouseDealsByMapBounds(
+        await getHouseDealsByMapBounds(
           bounds,
           ({ data }) => {
             if (data && Array.isArray(data)) {
-              this.houses = data.map(house => ({
+              this.houses = data.map((house) => ({
                 aptName: house.aptName,
                 aptSeq: house.aptSeq,
                 legalDong: house.legalDong,
                 latitude: house.latitude,
                 longitude: house.longitude,
-                // tradeAmount: house.tradeAmount,
-                // dealYear: house.dealYear,
-                // dealMonth: house.dealMonth,
-                // dealDay: house.dealDay
               }))
 
               // markerPositions 업데이트 - 유효한 위도/경도만 필터링
               this.markerPositions = data
-                .filter(house => house.latitude && house.longitude)
-                .map(house => {
+                .filter((house) => house.latitude && house.longitude)
+                .map((house) => {
                   const lat = parseFloat(house.latitude)
                   const lng = parseFloat(house.longitude)
                   return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
                 })
-                .filter(position => position !== null)
+                .filter((position) => position !== null)
 
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
@@ -60,7 +59,7 @@ export const useHouseStore = defineStore('houseStore', {
           },
           (error) => {
             console.error('아파트 정보 조회 실패:', error)
-          }
+          },
         )
       } catch (error) {
         console.error('Error in onBoundsChanged:', error)
@@ -122,11 +121,13 @@ export const useHouseStore = defineStore('houseStore', {
     async getDetail(aptSeq) {
       try {
         console.log('상세정보 조회 aptSeq:', aptSeq)
-        // 아파트 정보와 거래 내역을 순차적으로 조회
-        await this.getAptInfo(aptSeq)
-        await this.getAptDeals(aptSeq)
+        // Promise.all을 사용하여 두 요청을 동시에 처리
+        await Promise.all([this.getAptInfo(aptSeq), this.getAptDeals(aptSeq)])
       } catch (error) {
         console.error('아파트 상세 정보 조회 실패:', error)
+        // 에러 발생 시 상태 초기화
+        this.aptInfo = null
+        this.aptDeals = []
       }
     },
 
@@ -138,23 +139,23 @@ export const useHouseStore = defineStore('houseStore', {
         console.log('data:', data)
         if (data && Array.isArray(data)) {
           // houses 배열 업데이트
-          this.houses = data.map(house => ({
+          this.houses = data.map((house) => ({
             aptName: house.aptName,
             aptSeq: house.aptSeq,
             latitude: house.latitude,
             longitude: house.longitude,
-            legalDong: house.legalDong
+            legalDong: house.legalDong,
           }))
 
           // markerPositions 업데이트 - 유효한 위도/경도만 필터링
           this.markerPositions = data
-            .filter(house => house.latitude && house.longitude)
-            .map(house => {
+            .filter((house) => house.latitude && house.longitude)
+            .map((house) => {
               const lat = parseFloat(house.latitude)
               const lng = parseFloat(house.longitude)
               return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
             })
-            .filter(position => position !== null)
+            .filter((position) => position !== null)
 
           console.log('houses:', this.houses)
           console.log('markerPositions:', this.markerPositions)
@@ -265,9 +266,11 @@ export const useHouseStore = defineStore('houseStore', {
         const lng = parseFloat(interest.longitude)
         if (!isNaN(lat) && !isNaN(lng)) {
           const position = [lat, lng]
-          if (!this.interestMarkerPositions.some(pos => 
-            pos[0] === position[0] && pos[1] === position[1]
-          )) {
+          if (
+            !this.interestMarkerPositions.some(
+              (pos) => pos[0] === position[0] && pos[1] === position[1],
+            )
+          ) {
             this.interestMarkerPositions.push(position)
           }
         }
@@ -278,8 +281,8 @@ export const useHouseStore = defineStore('houseStore', {
       if (interest.latitude && interest.longitude) {
         const lat = parseFloat(interest.latitude)
         const lng = parseFloat(interest.longitude)
-        this.interestMarkerPositions = this.interestMarkerPositions.filter(pos => 
-          pos[0] !== lat || pos[1] !== lng
+        this.interestMarkerPositions = this.interestMarkerPositions.filter(
+          (pos) => pos[0] !== lat || pos[1] !== lng,
         )
       }
     },
@@ -290,6 +293,6 @@ export const useHouseStore = defineStore('houseStore', {
 
     clearMarkerPositions() {
       this.markerPositions = []
-    }
+    },
   },
 })
