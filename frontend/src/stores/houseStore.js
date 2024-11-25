@@ -23,6 +23,7 @@ export const useHouseStore = defineStore('houseStore', {
     isCommentWritingPanelVisible: false,
     showCommentWriting: false,
     selectedBoardId: null,
+    houseDetails: [],
   }),
 
   actions: {
@@ -41,6 +42,8 @@ export const useHouseStore = defineStore('houseStore', {
                 legalDong: house.legalDong,
                 latitude: house.latitude,
                 longitude: house.longitude,
+                maxPrice: house.maxPrice,
+                maxPriceArea: house.maxPriceArea,
               }))
 
               // markerPositions 업데이트 - 유효한 위도/경도만 필터링
@@ -53,8 +56,15 @@ export const useHouseStore = defineStore('houseStore', {
                 })
                 .filter((position) => position !== null)
 
+              // 각 아파트의 최고가 정보 저장
+              this.houseDetails = data.map((house) => ({
+                maxPrice: house.maxPrice || '?',
+                maxPriceArea: house.maxPriceArea || '?',
+              }))
+
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
+              console.log('houseDetails:', this.houseDetails)
             }
           },
           (error) => {
@@ -215,6 +225,7 @@ export const useHouseStore = defineStore('houseStore', {
       this.showCommentWriting = false
       this.aptInfo = null
       this.aptDeals = []
+      this.houseDetails = []
     },
 
     showComments() {

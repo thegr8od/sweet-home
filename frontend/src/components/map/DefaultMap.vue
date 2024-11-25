@@ -272,7 +272,7 @@ function createMarker(position, index, isInterest) {
       const bottomSection = document.createElement('div')
       bottomSection.className =
         'w-16 bg-white text-red-500 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-red-500 border-t-0'
-      bottomSection.innerHTML = `<span>${house?.dealType || '매'} ${house?.recentPrice || '?'}억</span>`
+      bottomSection.innerHTML = `<span>${house?.maxPrice || '?'}</span>`
 
       // Triangle pointer (빨간색 테두리로 변경)
       const triangle = document.createElement('div')
@@ -329,7 +329,15 @@ function createMarker(position, index, isInterest) {
     // 레벨이 5미만 (오버레이 마커 사용)
     if (level < 8) {
       const house = houses.value[index]
-      // 클릭 가능한 div 요소 생성
+      const houseDetail = houseStore.houseDetails[index]
+
+      // 가격 변환 로직 추가
+      const formattedPrice = formatPrice(houseDetail?.maxPrice)
+      const formattedArea = houseDetail?.maxPriceArea
+        ? Math.round(parseFloat(houseDetail.maxPriceArea) / 3.3)
+        : '?' // 제곱미터를 평으로 변환
+
+      // content div 생성
       const content = document.createElement('div')
       content.className = `inline-flex flex-col items-center w-auto cursor-pointer ${
         isSelected ? 'transform scale-120' : ''
@@ -340,13 +348,13 @@ function createMarker(position, index, isInterest) {
       const topSection = document.createElement('div')
       topSection.className =
         'w-16 bg-blue-600 text-white px-2 py-0.5 rounded-t-md text-xs font-medium text-center'
-      topSection.innerHTML = `<span>${house.area || '?'}평</span>`
+      topSection.innerHTML = `<span>${formattedArea}평</span>`
 
       // Bottom section
       const bottomSection = document.createElement('div')
       bottomSection.className =
         'w-16 bg-white text-blue-600 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-blue-600 border-t-0'
-      bottomSection.innerHTML = `<span>${house.dealType || '매'} ${house.recentPrice || '?'}억</span>`
+      bottomSection.innerHTML = `<span>${formattedPrice}</span>`
 
       // Triangle pointer
       const triangle = document.createElement('div')
@@ -367,7 +375,7 @@ function createMarker(position, index, isInterest) {
       const overlay_marker = new window.kakao.maps.CustomOverlay({
         position: markerPosition,
         content: content,
-        zIndex: 1,
+        zIndex: isSelected ? 3 : 1,
       })
 
       overlay_markers.push(overlay_marker)
@@ -582,16 +590,39 @@ function showInfoWindow(position) {
   }
 }
 
-// 가격 포맷팅 함수 추가
+// 가격 포맷팅 함수 수정
 function formatPrice(price) {
-  if (!price) return '가격정보 없음'
-  const amount = price.toString().replace(/,/g, '')
-  if (parseInt(amount) >= 10000) {
-    const uk = Math.floor(parseInt(amount) / 10000)
-    const rest = parseInt(amount) % 10000
-    return rest > 0 ? `${uk}억 ${rest}만원` : `${uk}억원`
+  if (!price || price === '?') return '?'
+  const amount = parseInt(price.toString().replace(/,/g, ''))
+
+  // 1천만원 미만인 경우 (예: 9,800 -> 9,800만)
+  if (amount < 1000) {
+    return `${amount}만`
   }
-  return price + '만원'
+
+  // 1천만원 이상, 1억 미만인 경우 (예: 8,500 -> 8,500만, 9,900 -> 9,900만)
+  if (amount < 10000) {
+    // 천만원 단위가 있는 경우
+    if (amount >= 1000) {
+      const chun = Math.floor(amount / 1000)
+      const rest = amount % 1000
+      return rest > 0 ? `${chun},${rest.toString().padStart(3, '0')}만` : `${chun}천만`
+    }
+    return `${amount}만`
+  }
+
+  // 1억 이상인 경우 (기존 로직)
+  const uk = Math.floor(amount / 10000)
+  const rest = amount % 10000
+
+  // 나머지가 있는 경우 (예: 1억 5000만원)
+  if (rest > 0) {
+    const decimal = (rest / 10000).toFixed(1)
+    return `${uk + parseFloat(decimal)}억`
+  }
+
+  // 정확히 n억인 경우
+  return `${uk}억`
 }
 </script>
 

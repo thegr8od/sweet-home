@@ -174,7 +174,25 @@
             hi.apt_nm AS aptName,
             hi.umd_nm AS legalDong,
             hi.latitude AS latitude,
-            hi.longitude AS longitude
+            hi.longitude AS longitude,
+            (
+                SELECT hd.deal_amount 
+                FROM housedeals hd 
+                WHERE hd.apt_seq = hi.apt_seq 
+                ORDER BY CAST(hd.deal_amount AS UNSIGNED) DESC 
+                LIMIT 1
+            ) AS maxPrice,
+            (
+                SELECT hd.exclu_use_ar 
+                FROM housedeals hd 
+                WHERE hd.apt_seq = hi.apt_seq 
+                AND hd.deal_amount = (
+                    SELECT MAX(hd2.deal_amount) 
+                    FROM housedeals hd2 
+                    WHERE hd2.apt_seq = hi.apt_seq
+                )
+                LIMIT 1
+            ) AS maxPriceArea
         FROM houseinfos hi
         WHERE hi.latitude BETWEEN #{minLat} AND #{maxLat}
         AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
