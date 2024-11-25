@@ -10,48 +10,56 @@
       <span v-else class="close-icon">&times;</span>
     </button>
 
-    <div v-if="isOpen"
-         class="chat-window"
-         :style="{ width: width + 'px', height: height + 'px' }"
-         ref="chatWindow">
+    <div
+      v-if="isOpen"
+      class="chat-window"
+      :style="{ width: width + 'px', height: height + 'px' }"
+      ref="chatWindow"
+    >
       <div class="chat-header" @mousedown="startDragging">
-        <h3>Sweet Home AI 상담</h3>
+        <div class="flex items-center gap-2">
+          <HomeIcon class="w-5 h-5" />
+          <h3>Sweet Home 상담</h3>
+        </div>
         <div class="header-buttons">
-          <button class="reset-button" @click="resetChat" title="대화 초기화">
-            🔄
+          <button class="icon-button" @click="resetChat" title="대화 초기화">
+            <RefreshCwIcon class="w-4 h-4" />
           </button>
-          <button class="close-button" @click="toggleChat">&times;</button>
+          <button class="icon-button" @click="toggleChat">
+            <XIcon class="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       <div class="chat-messages" ref="messageContainer">
-        <div v-for="(message, index) in messages"
-             :key="index"
-             :class="['message', message.type]">
-          <div v-if="message.type === 'bot' && message.loading" class="loading-dots">
-            <span></span><span></span><span></span>
+        <div v-for="(message, index) in messages" :key="index" :class="['message', message.type]">
+          <div class="message-content">
+            <div v-if="message.type === 'bot'" class="bot-avatar">AI</div>
+            <div class="message-bubble">
+              <div v-if="message.type === 'bot' && message.loading" class="loading-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div v-else class="message-text" v-html="formatMessage(message.text)"></div>
+            </div>
           </div>
-          <div v-else class="message-text" v-html="formatMessage(message.text)"></div>
         </div>
       </div>
 
       <div class="chat-input">
-        <input v-model="userInput"
-               type="text"
-               placeholder="질문을 입력하세요..."
-               @keyup.enter="sendMessage"
-               :disabled="isLoading"/>
-        <button @click="sendMessage"
-                class="send-btn"
-                :disabled="!userInput.trim() || isLoading">
-          전송
+        <input
+          v-model="userInput"
+          type="text"
+          placeholder="메시지를 입력하세요..."
+          @keyup.enter="sendMessage"
+          :disabled="isLoading"
+        />
+        <button @click="sendMessage" class="send-button" :disabled="!userInput.trim() || isLoading">
+          <SendIcon class="w-4 h-4" :class="{ 'opacity-50': !userInput.trim() || isLoading }" />
         </button>
       </div>
 
-      <div class="resize-handle"
-           @mousedown="startResize"
-           @touchstart="startResize">
-        <span class="resize-icon">⋌</span>
+      <div class="resize-handle" @mousedown="startResize">
+        <GripIcon class="w-4 h-4" />
       </div>
     </div>
   </div>
@@ -59,12 +67,20 @@
 
 <script setup>
 import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
+import {
+  MessageCircle as MessageCircleIcon,
+  X as XIcon,
+  Home as HomeIcon,
+  RefreshCw as RefreshCwIcon,
+  Send as SendIcon,
+  Grip as GripIcon,
+} from 'lucide-vue-next'
 
 const props = defineProps({
   initialLocation: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const isOpen = ref(false)
@@ -73,53 +89,53 @@ const userInput = ref('')
 const messageContainer = ref(null)
 const isLoading = ref(false)
 
-const GROQ_API_KEY = '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'
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY
 
 const sendChatMessage = async (message) => {
   try {
-    console.log('Sending message to Groq:', message);
+    console.log('Sending message to OpenAI:', message)
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer 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`,
-
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         messages: [
           {
-            role: "system",
-            content: "당신은 부동산 전문가입니다.  부동산 동향과 투자 가치에 대해 전문적인 조언을 제공합니다. 하지만, 부동산이외의 질문에도 답을 잘 할 수 있습니다. 또한 한국어로만 대답을 합니다."
+            role: 'system',
+            content:
+              '당신은 부동산 전문가입니다. 부동산 동향과 투자 가치에 대해 전문적인 조언을 제공합니다. 하지만, 부동산이외의 질문에도 답을 잘 할 수 있습니다. 또한 한국어로만 대답을 합니다.',
           },
           {
-            role: "user",
-            content: message
-          }
+            role: 'user',
+            content: message,
+          },
         ],
-        model: "mixtral-8x7b-32768",
+        model: 'gpt-4o-mini',
         temperature: 0.5,
-        max_tokens: 2048
-      })
-    });
+        max_tokens: 2048,
+      }),
+    })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const data = await response.json();
-    console.log('Groq API response:', data);
+    const data = await response.json()
+    console.log('OpenAI API response:', data)
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response format from Groq API');
+      throw new Error('Invalid response format from OpenAI API')
     }
 
     return {
-      message: data.choices[0].message.content.trim()
-    };
+      message: data.choices[0].message.content.trim(),
+    }
   } catch (error) {
-    console.error('Detailed Chat API Error:', error);
-    throw new Error(error.message || '알 수 없는 오류가 발생했습니다.');
+    console.error('Detailed Chat API Error:', error)
+    throw new Error(error.message || '알 수 없는 오류가 발생했습니다.')
   }
 }
 
@@ -139,7 +155,7 @@ const toggleChat = () => {
 • [동네명]의 부동산 시장 동향이 어떤가요?
 • [동네명]의 교통/학군/상권 정보는 어떤가요?
 • [동네명]의 향후 개발 계획이 있나요?
-• [아파트명]의 장단점을 알려주세요.`
+• [아파트명]의 장단점을 알려주세요.`,
     })
   }
 }
@@ -152,13 +168,13 @@ const sendMessage = async () => {
 
   messages.value.push({
     type: 'user',
-    text: message
+    text: message,
   })
 
   messages.value.push({
     type: 'bot',
     loading: true,
-    text: ''
+    text: '',
   })
 
   try {
@@ -168,7 +184,7 @@ const sendMessage = async () => {
 
     messages.value.push({
       type: 'bot',
-      text: response.message
+      text: response.message,
     })
   } catch (error) {
     console.error('Chat error:', error)
@@ -176,7 +192,7 @@ const sendMessage = async () => {
 
     messages.value.push({
       type: 'bot',
-      text: `죄송합니다. ${error.message || '응답 중 오류가 발생했습니다.'} 다시 시도해주세요.`
+      text: `죄송합니다. ${error.message || '응답 중 오류가 발생했습니다.'} 다시 시도해주세요.`,
     })
   } finally {
     isLoading.value = false
@@ -193,25 +209,29 @@ watch(messages, () => {
 })
 
 // 초기 위치가 설정되면 자동으로 질문 생성
-watch(() => props.initialLocation, (newLocation) => {
-  if (newLocation && messages.value.length === 0) {
-    const initialQuestion = `${newLocation}의 특징을 알려주세요.
+watch(
+  () => props.initialLocation,
+  (newLocation) => {
+    if (newLocation && messages.value.length === 0) {
+      const initialQuestion = `${newLocation}의 특징을 알려주세요.
     1. 주변 인프라 (교통, 학군, 상권)
     2. 주요 아파 단지
     3. 최근 시세 동향
     4. 향후 개발 계획
     에 대해 설명해주세요.`
 
-    sendMessage(initialQuestion)
-  }
-}, { immediate: true })
+      sendMessage(initialQuestion)
+    }
+  },
+  { immediate: true },
+)
 
 // 크기 조절 관련 상태 추가
 const currentSize = ref('medium')
 const sizes = {
   small: { width: '300px', height: '400px' },
   medium: { width: '400px', height: '500px' },
-  large: { width: '500px', height: '600px' }
+  large: { width: '500px', height: '600px' },
 }
 
 const chatWindowStyle = computed(() => sizes[currentSize.value])
@@ -235,7 +255,7 @@ const startDragging = (e) => {
   const rect = chatWindow.value.getBoundingClientRect()
   dragOffset.value = {
     x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    y: e.clientY - rect.top,
   }
 }
 
@@ -328,7 +348,7 @@ const resetChat = () => {
 • [동네명]의 부동산 시장 동향이 어떤가요?
 • [동네명]의 교통/학군/상권 정보는 어떤가요?
 • [동네명]의 향후 개발 계획이 있나요?
-• [아파트명]의 장단점을 알려주세요.`
+• [아파트명]의 장단점을 알려주세요.`,
   })
 }
 </script>
@@ -336,21 +356,23 @@ const resetChat = () => {
 <style scoped>
 .chat-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
 }
 
 .chat-toggle-btn {
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #2196F3;
+  background: #1a73e8;
   color: white;
   border: none;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
@@ -368,9 +390,9 @@ const resetChat = () => {
 }
 
 .ai-circle {
-  width: 40px;
-  height: 40px;
-  background: #2196F3;
+  width: 32px;
+  height: 32px;
+  background: #1a73e8;
   border: 2px solid white;
   border-radius: 50%;
   display: flex;
@@ -381,10 +403,10 @@ const resetChat = () => {
 }
 
 .ai-text {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
   color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .pulse {
@@ -412,13 +434,13 @@ const resetChat = () => {
 }
 
 .close-icon {
-  font-size: 32px;
+  font-size: 24px;
   color: white;
 }
 
 .chat-toggle-btn:hover {
   transform: scale(1.1);
-  background: #1976D2;
+  background: #1557b0;
 }
 
 .chat-toggle-btn.chat-open {
@@ -431,193 +453,202 @@ const resetChat = () => {
 
 .chat-window {
   position: fixed;
-  bottom: 70px;
-  right: 20px;
+  bottom: 84px;
+  right: 24px;
   background: white;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  min-width: 300px;
-  min-height: 400px;
+  min-width: 320px;
+  min-height: 480px;
   overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
 .chat-header {
-  padding: 15px;
-  background: #2196F3;
-  color: white;
-  border-radius: 10px 10px 0 0;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   cursor: move;
 }
 
 .chat-header h3 {
   margin: 0;
   font-size: 16px;
-  flex: 1;
+  font-weight: 600;
+  color: #111827;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  padding: 4px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 15px;
-  margin-bottom: 0;
+  padding: 16px;
+  background: #f9fafb;
 }
 
 .message {
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  border-radius: 15px;
-  max-width: 85%;
-  word-break: break-word;  /* 긴 텍스트 줄바꿈 */
+  margin-bottom: 16px;
 }
 
-.bot {
-  background: #f0f0f0;
-  margin-right: auto;
+.message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.user {
-  background: #2196F3;
+.bot-avatar {
+  width: 32px;
+  height: 32px;
+  background: #1a73e8;
+  color: white;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bot .message-bubble {
+  background: white;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.user .message-bubble {
+  background: #1a73e8;
   color: white;
   margin-left: auto;
 }
 
 .chat-input {
-  padding: 15px;
-  border-top: 1px solid #eee;
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 16px;
   background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 8px;
 }
 
 input {
   flex: 1;
-  min-width: 0;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
+  transition: all 0.2s;
 }
 
-.send-btn {
-  padding: 8px 15px;
-  background: #2196F3;
+input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+}
+
+.send-button {
+  padding: 8px;
+  background: #1a73e8;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.send-btn:disabled {
-  background: #ccc;
+.send-button:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+.send-button:disabled {
+  background: #e5e7eb;
   cursor: not-allowed;
 }
 
 .loading-dots {
   display: flex;
   gap: 4px;
-  padding: 8px;
+  padding: 4px;
 }
 
 .loading-dots span {
-  width: 8px;
-  height: 8px;
-  background: #2196F3;
+  width: 6px;
+  height: 6px;
+  background: #1a73e8;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
-.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 0 5px;
-}
-
-.close-button:hover {
-  opacity: 0.8;
-}
-
 .resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 20px;
-  height: 20px;
+  right: 4px;
+  bottom: 4px;
+  color: #9ca3af;
   cursor: se-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px;
 }
 
-.resize-icon {
-  color: #2196F3;
-  font-size: 16px;
-  transform: rotate(-45deg);
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }
 
-/* 드래그 중일 때 텍스트 선택 방지 */
-.chat-window * {
-  user-select: none;
-}
-
-.message-text {
-  white-space: pre-line;  /* 줄바꿈 보존 */
-  line-height: 1.5;       /* 줄간격 조정 */
-}
-
-/* 메시지 컨테이너 스크롤바 스타일링 */
+/* 스크롤바 스타일링 */
 .chat-messages::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .chat-messages::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
+  background: #d1d5db;
+  border-radius: 2px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.reset-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s;
-}
-
-.reset-button:hover {
-  transform: rotate(180deg);
+  background: #9ca3af;
 }
 </style>
