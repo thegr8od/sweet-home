@@ -38,6 +38,7 @@ import { useAddressStore } from '@/stores/addressStore'
 import { useHouseStore } from '@/stores/houseStore'
 import { storeToRefs } from 'pinia'
 
+
 export default {
   name: 'HouseSearchBar',
   setup() {
@@ -74,6 +75,8 @@ export default {
         }
         console.log('address:', address)
         await houseStore.getHouseListByAddress(address)
+        console.log('houseStore.markerPositions.value:', houseStore.markerPositions.value)
+        // 좌표 업데이트 해야함.
       }
     }
 

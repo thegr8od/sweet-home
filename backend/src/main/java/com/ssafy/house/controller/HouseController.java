@@ -132,5 +132,23 @@ public class HouseController {
         System.out.println("읍면동 코드: " + result.getUmdCd());
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
+    @GetMapping("/map/area")
+    @Operation(summary = "좌표 범위 내 아파트 실거래 정보 조회", description = "지도의 특정 영역 내에 있는 아파트의 실거래 정보를 조회합니다")
+    public ResponseEntity<List<HouseDealSimpleResponseDto>> getHouseDealsByMapBounds(
+            @RequestParam String minLat,
+            @RequestParam String maxLat,
+            @RequestParam String minLng,
+            @RequestParam String maxLng,
+            @RequestParam Integer limit) {
+        
+        List<HouseDealSimpleResponseDto> result = houseService.getHouseDealsByCoordinates(minLat, maxLat, minLng, maxLng, limit);
+        
+        if (result.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
     //
 }

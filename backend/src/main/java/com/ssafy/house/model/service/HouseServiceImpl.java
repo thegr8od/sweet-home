@@ -62,4 +62,14 @@ public class HouseServiceImpl implements HouseService {
 		return null;
 	}
 
+	@Override
+	public List<HouseInfoDto> getHouseInfosByCoordinates(String minLat, String maxLat, String minLng, String maxLng) {
+		return houseMapper.getHouseInfosByCoordinates(minLat, maxLat, minLng, maxLng);
+	}
+
+	@Override
+	public List<HouseDealSimpleResponseDto> getHouseDealsByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit) {
+		return houseMapper.getHouseDealsByCoordinates(minLat, maxLat, minLng, maxLng, limit);
+	}
+
 }

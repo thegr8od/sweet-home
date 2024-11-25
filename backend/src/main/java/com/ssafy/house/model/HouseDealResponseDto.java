@@ -106,6 +106,23 @@ public class HouseDealResponseDto {
 		this.dealDay = dealDay;
 	}
 
+
+	public String getLatitude() {
+		return latitude;
+	}
+
+	public String getLongitude() {
+		return longitude;
+	}
+
+	public void setLatitude(String latitude) {
+		this.latitude = latitude;
+	}
+
+	public void setLongitude(String longitude) {
+		this.longitude = longitude;
+	}
+
 	@Override
 	public String toString() {
 		return "실거래가 정보 [아파트 코드=" + aptSeq + ", 아파트이름=" + aptName + ", 층=" + floor + ", 면적=" + excluUseAr + ", 법적동="

@@ -13,12 +13,21 @@ import { storeToRefs } from 'pinia'
 const houseStore = useHouseStore()
 const { selectedPosition, markerPositions, interestMarkerPositions, houses } = storeToRefs(houseStore)
 
+
 // 지도 관련 변수
 const mapContainer = ref(null)
 let map = null
 let markers = []
 let interestMarkers = []
 let infowindow = null
+let clusterer = null
+
+// let bounds = {
+//   ha: 0,
+//   oa: 0,
+//   pa: 0,
+//   qa: 0
+// }
 
 // 외부에서 호출할 수 있는 메서드 정의
 const setCenter = (position) => {
@@ -62,7 +71,7 @@ watch(
   (newPositions) => {
     console.log('일반 마커 위치가 변경되었습니다:', newPositions)
     if (map) {
-      updateNormalMarkers(newPositions)
+      updateAllMarkers(newPositions)
     }
   },
   { deep: true }
@@ -106,10 +115,11 @@ onBeforeUnmount(() => {
 // Kakao Map 로드
 function loadKakaoMap() {
   const script = document.createElement('script')
-  script.src = `//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${import.meta.env.VITE_KAKAO_MAP_API_KEY}&libraries=services,clusterer`
+  script.src = `//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${import.meta.env.VITE_KAKAO_MAP_API_KEY}&libraries=clusterer`
   script.onload = () => {
     window.kakao.maps.load(() => {
       initMap()
+      updateArea()
     })
   }
   document.head.appendChild(script)
@@ -124,10 +134,17 @@ function initMap() {
 
   const options = {
     center: new window.kakao.maps.LatLng(35.8751717287353, 128.570018325571),
-    level: 5,
+    level: 3,
   }
 
   map = new window.kakao.maps.Map(mapContainer.value, options)
+
+  // 마커 클러스터러를 생성합니다 
+  clusterer = new window.kakao.maps.MarkerClusterer({
+    map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체 
+    averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정 
+    minLevel: 5 // 클러스터 할 최소 지도 레벨 
+  });
 
   // 먼저 일반 마커 생성
   if (markerPositions.value.length > 0) {
@@ -142,10 +159,145 @@ function initMap() {
       createMarker(position, index, true)
     })
   }
+
+
+  window.kakao.maps.event.addListener(map, 'zoom_changed', function() {
+    console.log('zoom_changed')
+    // 인포윈도우가 열려있다면 닫기
+    if (infowindow) {
+      infowindow.close()
+    }
+    updateArea()
+  })
+
+  window.kakao.maps.event.addListener(map, 'dragend', function() {
+    console.log('dragend')
+    // 인포윈도우가 열려있다면 닫기
+    if (infowindow) {
+      infowindow.close()
+    }
+    updateArea()
+  })
+}
+
+function updateArea() {
+  console.log('checkArea')
+  houseStore.clearMarkerPositions()
+
+  var level = map.getLevel();
+  console.log('level:', level);
+
+  var limit = 100
+
+  if (level <= 3){
+    limit = 5000
+  }else if (level <= 4){
+    limit = 1000
+  }else if (level <= 5){
+    limit = 300
+  }else if (level <= 6){
+    limit = 200
+  }else if (level <= 7){
+    limit = 100
+  }else if (level == 8){
+    limit = 30
+  }else if (level == 9){
+    limit = 40
+  }else if (level == 10){
+    limit = 50
+  }
+  console.log('limit:', limit)
+
+  if (map) {
+    const bounds = map.getBounds()
+    const params = {
+      minLat: bounds.getSouthWest().getLat(),
+      maxLat: bounds.getNorthEast().getLat(),
+      minLng: bounds.getSouthWest().getLng(),
+      maxLng: bounds.getNorthEast().getLng(),
+      limit: limit
+    }
+    console.log('지도 영역:', params)
+    houseStore.onBoundsChanged(params)
+    updateAllMarkers(markerPositions.value)
+    clusterer.addMarkers(markers)
+
+  }
+
+}
+
+
+
+// 마커 생성 함수 수정
+function createMarker(position, index, isInterest) {
+  const markerPosition = new window.kakao.maps.LatLng(position[0], position[1])
+  
+  let marker
+  if (isInterest) {
+    // 관심 마커 이미지 설정 - 크기를 일반 마커와 비슷하게 조정
+    const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png'
+    const imageSize = new window.kakao.maps.Size(27.42, 40)  // 크기를 24x35로 변경
+    const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize)
+    
+    marker = new window.kakao.maps.Marker({
+      position: markerPosition,
+      image: markerImage,
+      zIndex: 2
+    })
+  } else {
+    // 일반 마커는 기본 마커 사용
+    marker = new window.kakao.maps.Marker({
+      position: markerPosition,
+      zIndex: 1
+    })
+  }
+
+  // 마커를 지도에 표시
+  marker.setMap(map)
+
+  // 마커 클릭 이벤트
+  window.kakao.maps.event.addListener(marker, 'click', () => {
+    // 관심 마커인 경우와 일반 마커인 경우를 구분
+    updateArea()
+    let targetHouse
+    if (isInterest) {
+      const interestStore = useInterestStore()
+      targetHouse = interestStore.interests.find(interest => 
+        parseFloat(interest.latitude) === position[0] && 
+        parseFloat(interest.longitude) === position[1]
+      )
+      // 관심 마커 클릭 시 해당 위치로 이동하고 줌 레벨 조정
+      map.setLevel(3)
+      map.panTo(markerPosition)
+    } else {
+      targetHouse = houses.value[index]
+    }
+
+    if (targetHouse) {
+      houseStore.setSelectedPosition({
+        lat: position[0],
+        lng: position[1],
+      })
+
+      houseStore.setSelectedHouse(targetHouse)
+
+      if (targetHouse.aptSeq) {
+        console.log('맵: aptSeq:', targetHouse.aptSeq)
+        houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
+      }
+    }
+  })
+
+  if (isInterest) {
+    interestMarkers.push(marker)
+  } else {
+    markers.push(marker)
+  }
+
 }
 
 // 일반 마커만 업데이트하는 함수 수정
-function updateNormalMarkers(positions) {
+function updateAllMarkers(positions) {
   // 기존 일반 마커만 제거
   markers.forEach((marker) => marker.setMap(null))
   markers = []
@@ -162,14 +314,14 @@ function updateNormalMarkers(positions) {
     })
   }
 
-  // 일반 마커가 있을 경우에만 bounds 설정
-  if (positions.length > 0) {
-    const bounds = new window.kakao.maps.LatLngBounds()
-    positions.forEach((position) => {
-      bounds.extend(new window.kakao.maps.LatLng(position[0], position[1]))
-    })
-    map.setBounds(bounds)
-  }
+  // // 일반 마커가 있을 경우에만 bounds 설정
+  // if (positions.length > 0) {
+  //   const bounds = new window.kakao.maps.LatLngBounds()
+  //   positions.forEach((position) => {
+  //     bounds.extend(new window.kakao.maps.LatLng(position[0], position[1]))
+  //   })
+  //   map.setBounds(bounds)
+  // }
 }
 
 // 위치로 이동하는 메서드
@@ -274,71 +426,6 @@ function formatPrice(price) {
   return price + '만원'
 }
 
-// 마커 생성 함수 수정
-function createMarker(position, index, isInterest) {
-  const markerPosition = new window.kakao.maps.LatLng(position[0], position[1])
-  
-  let marker
-  if (isInterest) {
-    // 관심 마커 이미지 설정 - 크기를 일반 마커와 비슷하게 조정
-    const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png'
-    const imageSize = new window.kakao.maps.Size(27.42, 40)  // 크기를 24x35로 변경
-    const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize)
-    
-    marker = new window.kakao.maps.Marker({
-      position: markerPosition,
-      image: markerImage,
-      zIndex: 2
-    })
-  } else {
-    // 일반 마커는 기본 마커 사용
-    marker = new window.kakao.maps.Marker({
-      position: markerPosition,
-      zIndex: 1
-    })
-  }
-
-  // 마커를 지도에 표시
-  marker.setMap(map)
-
-  // 마커 클릭 이벤트
-  window.kakao.maps.event.addListener(marker, 'click', () => {
-    // 관심 마커인 경우와 일반 마커인 경우를 구분
-    let targetHouse
-    if (isInterest) {
-      const interestStore = useInterestStore()
-      targetHouse = interestStore.interests.find(interest => 
-        parseFloat(interest.latitude) === position[0] && 
-        parseFloat(interest.longitude) === position[1]
-      )
-      // 관심 마커 클릭 시 해당 위치로 이동하고 줌 레벨 조정
-      map.setLevel(3)
-      map.panTo(markerPosition)
-    } else {
-      targetHouse = houses.value[index]
-    }
-
-    if (targetHouse) {
-      houseStore.setSelectedPosition({
-        lat: position[0],
-        lng: position[1],
-      })
-
-      houseStore.setSelectedHouse(targetHouse)
-
-      if (targetHouse.aptSeq) {
-        console.log('맵: aptSeq:', targetHouse.aptSeq)
-        houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
-      }
-    }
-  })
-
-  if (isInterest) {
-    interestMarkers.push(marker)
-  } else {
-    markers.push(marker)
-  }
-}
 </script>
 
 <style scoped>

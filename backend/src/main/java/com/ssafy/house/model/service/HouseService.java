@@ -33,4 +33,10 @@ public interface HouseService {
 	HouseInfoDto getDongCodeByName(String dongName);
 	
 	HouseInfoDto getHouseInfoByDongName(String dongName);
+
+	// 특정 좌표 범위 내의 아파트 정보 조회 메서드 추가
+	List<HouseInfoDto> getHouseInfosByCoordinates(String minLat, String maxLat, String minLng, String maxLng);
+
+	// 특정 좌표 범위 내의 아파트 실거래 정보 조회
+	List<HouseDealSimpleResponseDto> getHouseDealsByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit);
 }

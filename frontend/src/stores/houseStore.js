@@ -1,6 +1,6 @@
 // stores/houseStore.js
 import { defineStore } from 'pinia'
-import { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq } from '@/api/house.js'
+import { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq, getHouseDealsByMapBounds } from '@/api/house.js'
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -21,6 +21,52 @@ export const useHouseStore = defineStore('houseStore', {
   }),
 
   actions: {
+
+    // 지도 영역이 변경될 때 호출되는 함수
+    async onBoundsChanged (bounds) {
+      // this.clearHouses()
+      console.log(bounds)
+     
+      try {
+        const response = await getHouseDealsByMapBounds(
+          bounds,
+          ({ data }) => {
+            if (data && Array.isArray(data)) {
+              this.houses = data.map(house => ({
+                aptName: house.aptName,
+                aptSeq: house.aptSeq,
+                legalDong: house.legalDong,
+                latitude: house.latitude,
+                longitude: house.longitude,
+                // tradeAmount: house.tradeAmount,
+                // dealYear: house.dealYear,
+                // dealMonth: house.dealMonth,
+                // dealDay: house.dealDay
+              }))
+
+              // markerPositions 업데이트 - 유효한 위도/경도만 필터링
+              this.markerPositions = data
+                .filter(house => house.latitude && house.longitude)
+                .map(house => {
+                  const lat = parseFloat(house.latitude)
+                  const lng = parseFloat(house.longitude)
+                  return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                })
+                .filter(position => position !== null)
+
+              console.log('houses:', this.houses)
+              console.log('markerPositions:', this.markerPositions)
+            }
+          },
+          (error) => {
+            console.error('아파트 정보 조회 실패:', error)
+          }
+        )
+      } catch (error) {
+        console.error('Error in onBoundsChanged:', error)
+      }
+    },
+
     async getHouseDealsByAddress(address) {
       try {
         const response = await new Promise((resolve, reject) => {
@@ -241,5 +287,9 @@ export const useHouseStore = defineStore('houseStore', {
     clearInterestMarkers() {
       this.interestMarkerPositions = []
     },
+
+    clearMarkerPositions() {
+      this.markerPositions = []
+    }
   },
 })

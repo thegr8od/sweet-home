@@ -13,4 +13,16 @@ function getHouseInfoByAptSeq(aptSeq, success, fail) {
   api.get(`/house/${aptSeq.aptSeq}`).then(success).catch(fail)
 }
 
-export { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq }
+function getHouseDealsByMapBounds(bounds, success, fail) {
+  api.get(`/house/map/area`, {
+    params: {
+      minLat: bounds.minLat,
+      maxLat: bounds.maxLat,
+      minLng: bounds.minLng,
+      maxLng: bounds.maxLng,
+      limit: bounds.limit
+    }
+  }).then(success).catch(fail)
+}
+
+export { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq, getHouseDealsByMapBounds }

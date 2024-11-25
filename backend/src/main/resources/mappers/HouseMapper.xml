@@ -149,4 +149,39 @@
     LIMIT 1
 </select>
 
+<!-- 특정 좌표 범위 내의 아파트 정보 조회 -->
+<select id="getHouseInfosByCoordinates" parameterType="map"
+    resultType="com.ssafy.house.model.HouseInfoDto">
+    SELECT
+        hi.apt_seq AS aptSeq,
+        hi.apt_nm AS aptNm,
+        hi.umd_nm AS umdNm,
+        hi.build_year AS buildYear,
+        hi.latitude AS latitude,
+        hi.longitude AS longitude
+    FROM houseinfos hi
+    WHERE hi.latitude BETWEEN #{minLat} AND #{maxLat}
+    AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+    ORDER BY hi.apt_nm
+</select>
+
+<!-- 특정 좌표 범위 내의 아파트 실거래 정보 조회 (중복 제거, 랜덤 선택) -->
+<select id="getHouseDealsByCoordinates" parameterType="map"
+    resultType="com.ssafy.house.model.HouseDealSimpleResponseDto">
+    SELECT * FROM (
+        SELECT 
+            hi.apt_seq AS aptSeq,
+            hi.apt_nm AS aptName,
+            hi.umd_nm AS legalDong,
+            hi.latitude AS latitude,
+            hi.longitude AS longitude
+        FROM houseinfos hi
+        WHERE hi.latitude BETWEEN #{minLat} AND #{maxLat}
+        AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+        ORDER BY RAND()
+        LIMIT #{limit}
+    ) as random_houses
+    ORDER BY aptName
+</select>
+
 </mapper>
