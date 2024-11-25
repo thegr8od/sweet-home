@@ -8,7 +8,6 @@ import {
   getHouseInfoByAptName,
   } from '@/api/house.js'
 import { useInterestStore } from '@/stores/interestStore'
-=======
 
 
 export const useHouseStore = defineStore('houseStore', {
@@ -318,9 +317,9 @@ export const useHouseStore = defineStore('houseStore', {
       this.markerPositions = []
     },
 
-
     setUpdateMapFlag(flag) {
       this.updateMapFlag = flag
+    },
 
     async searchByAptName(aptName) {
       this.clearHouses()
@@ -422,3 +421,4 @@ export const useHouseStore = defineStore('houseStore', {
     },
   },
 })
+
