@@ -65,18 +65,10 @@
     </update>
     
     <update id="deleteComment" parameterType="int">
-    UPDATE aptboard_comments c
+    UPDATE aptboard_comments
     SET 
         is_deleted = true,
         deleted_at = NOW()
     WHERE id = #{id};
-    
-    UPDATE aptboard a
-    SET comments_count = comments_count - 1
-    WHERE id = (
-        SELECT board_id 
-        FROM aptboard_comments 
-        WHERE id = #{id}
-    );
 </update>
 </mapper> 

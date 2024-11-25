@@ -262,22 +262,36 @@ export const useAptBoardStore = defineStore('aptBoard', {
     // 댓글 삭제
     async deleteComment(boardId, commentId) {
       try {
-        await deleteComment(commentId)
+        await deleteComment(
+          commentId,
+          async (response) => {
+            // 현재 보고 있는 게시글의 댓글 목록에서 제거
+            if (this.currentBoard?.comments) {
+              this.currentBoard.comments = this.currentBoard.comments.filter(
+                (c) => c.id !== commentId,
+              )
+            }
 
-        // 해당 게시글의 댓글 수 감소
-        const board = this.boards.find((b) => b.id === boardId)
-        if (board) {
-          board.commentsCount--
-        }
+            // 해당 게시글의 댓글 수 감소
+            const board = this.boards.find((b) => b.id === boardId)
+            if (board) {
+              board.commentsCount = Math.max(0, board.commentsCount - 1)
+            }
 
-        // 현재 보고 있는 게시글의 댓글 수도 감소
-        if (this.currentBoard?.id === boardId) {
-          this.currentBoard.commentsCount--
-        }
+            // 현재 보고 있는 게시글의 댓글 수도 감소
+            if (this.currentBoard?.id === boardId) {
+              this.currentBoard.commentsCount = Math.max(0, this.currentBoard.commentsCount - 1)
+            }
+          },
+          (error) => {
+            console.error('댓글 삭제 실패:', error)
+            throw error
+          },
+        )
 
         return true
       } catch (error) {
-        console.error('댓글 삭제 실패:', error)
+        console.error('댓글 삭제 중 에러:', error)
         throw error
       }
     },
