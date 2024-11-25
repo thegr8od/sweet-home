@@ -6,6 +6,7 @@ import {
   houseDealListByAptSeq,
   getHouseDealsByMapBounds,
 } from '@/api/house.js'
+import { useInterestStore } from '@/stores/interestStore'
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -30,6 +31,7 @@ export const useHouseStore = defineStore('houseStore', {
     // 지도 영역이 변경될 때 호출되는 함수
     async onBoundsChanged(bounds) {
       console.log(bounds)
+      const interestStore = useInterestStore()
 
       try {
         await getHouseDealsByMapBounds(
@@ -61,6 +63,9 @@ export const useHouseStore = defineStore('houseStore', {
                 maxPrice: house.maxPrice || '?',
                 maxPriceArea: house.maxPriceArea || '?',
               }))
+
+              // 관심 매물 정보 업데이트
+              interestStore.updateInterestDetails(this.houses, this.houseDetails)
 
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)

@@ -249,12 +249,20 @@ function createMarker(position, index, isInterest) {
   let marker
   if (isInterest) {
     if (level < 8) {
-      // 오버레이 마커 사용
       const house = interestStore.interests.find(
         (interest) =>
           parseFloat(interest.latitude) === position[0] &&
           parseFloat(interest.longitude) === position[1],
       )
+
+      // 실거래 정보 가져오기
+      const dealInfo = house ? interestStore.interestDetails[house.aptSeq] : null
+
+      // 가격 변환 로직 추가
+      const formattedPrice = formatPrice(dealInfo?.maxPrice)
+      const formattedArea = dealInfo?.maxPriceArea
+        ? Math.round(parseFloat(dealInfo.maxPriceArea) / 3.3)
+        : '?'
 
       const content = document.createElement('div')
       content.className = `inline-flex flex-col items-center w-auto cursor-pointer ${
@@ -262,28 +270,30 @@ function createMarker(position, index, isInterest) {
       }`
       content.style.filter = isSelected ? 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2))' : ''
 
-      // Top section (빨간색 배경으로 변경)
+      // Top section
       const topSection = document.createElement('div')
       topSection.className =
         'w-16 bg-red-500 text-white px-2 py-0.5 rounded-t-md text-xs font-medium text-center'
-      topSection.innerHTML = `<span>${house?.area || '?'}평</span>`
+      topSection.innerHTML = `<span>${formattedArea}평</span>`
 
-      // Bottom section (테두리 색상도 빨간색으로 변경)
+      // Bottom section
       const bottomSection = document.createElement('div')
       bottomSection.className =
         'w-16 bg-white text-red-500 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-red-500 border-t-0'
-      bottomSection.innerHTML = `<span>${house?.maxPrice || '?'}</span>`
+      bottomSection.innerHTML = `<span>${formattedPrice}</span>`
 
-      // Triangle pointer (빨간색 테두리로 변경)
+      // Triangle pointer
       const triangle = document.createElement('div')
       triangle.className =
         'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white'
-      triangle.style.filter = 'drop-shadow(0 1px 0 rgb(239 68 68))' // rgb(239 68 68)는 red-500 색상값
+      triangle.style.filter = 'drop-shadow(0 1px 0 rgb(239 68 68))'
 
+      // 요소들을 조합
       content.appendChild(topSection)
       content.appendChild(bottomSection)
       content.appendChild(triangle)
 
+      // 클릭 이벤트 추가
       content.onclick = () => {
         handleMarkerClick(position, index, true)
       }

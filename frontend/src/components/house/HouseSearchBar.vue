@@ -38,7 +38,6 @@ import { useAddressStore } from '@/stores/addressStore'
 import { useHouseStore } from '@/stores/houseStore'
 import { storeToRefs } from 'pinia'
 
-
 export default {
   name: 'HouseSearchBar',
   setup() {
