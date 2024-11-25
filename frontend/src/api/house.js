@@ -14,15 +14,31 @@ function getHouseInfoByAptSeq(aptSeq, success, fail) {
 }
 
 function getHouseDealsByMapBounds(bounds, success, fail) {
-  api.get(`/house/map/area`, {
-    params: {
-      minLat: bounds.minLat,
-      maxLat: bounds.maxLat,
-      minLng: bounds.minLng,
-      maxLng: bounds.maxLng,
-      limit: bounds.limit
-    }
-  }).then(success).catch(fail)
+  api
+    .get(`/house/map/area`, {
+      params: {
+        minLat: bounds.minLat,
+        maxLat: bounds.maxLat,
+        minLng: bounds.minLng,
+        maxLng: bounds.maxLng,
+        limit: bounds.limit,
+      },
+    })
+    .then(success)
+    .catch(fail)
 }
 
-export { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq, getHouseDealsByMapBounds }
+function getHouseInfoByAptName(aptName, success, fail) {
+  api
+    .get(`/house/info`, { params: { aptName: aptName } })
+    .then(success)
+    .catch(fail)
+}
+
+export {
+  houseDealListByAddress,
+  getHouseInfoByAptSeq,
+  houseDealListByAptSeq,
+  getHouseDealsByMapBounds,
+  getHouseInfoByAptName,
+}

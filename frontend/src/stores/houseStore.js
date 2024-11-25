@@ -1,6 +1,12 @@
 // stores/houseStore.js
 import { defineStore } from 'pinia'
-import { houseDealListByAddress, getHouseInfoByAptSeq, houseDealListByAptSeq, getHouseDealsByMapBounds } from '@/api/house.js'
+import {
+  houseDealListByAddress,
+  getHouseInfoByAptSeq,
+  houseDealListByAptSeq,
+  getHouseDealsByMapBounds,
+  getHouseInfoByAptName,
+} from '@/api/house.js'
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -21,18 +27,17 @@ export const useHouseStore = defineStore('houseStore', {
   }),
 
   actions: {
-
     // 지도 영역이 변경될 때 호출되는 함수
-    async onBoundsChanged (bounds) {
+    async onBoundsChanged(bounds) {
       // this.clearHouses()
       console.log(bounds)
-     
+
       try {
         const response = await getHouseDealsByMapBounds(
           bounds,
           ({ data }) => {
             if (data && Array.isArray(data)) {
-              this.houses = data.map(house => ({
+              this.houses = data.map((house) => ({
                 aptName: house.aptName,
                 aptSeq: house.aptSeq,
                 legalDong: house.legalDong,
@@ -46,13 +51,13 @@ export const useHouseStore = defineStore('houseStore', {
 
               // markerPositions 업데이트 - 유효한 위도/경도만 필터링
               this.markerPositions = data
-                .filter(house => house.latitude && house.longitude)
-                .map(house => {
+                .filter((house) => house.latitude && house.longitude)
+                .map((house) => {
                   const lat = parseFloat(house.latitude)
                   const lng = parseFloat(house.longitude)
                   return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
                 })
-                .filter(position => position !== null)
+                .filter((position) => position !== null)
 
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
@@ -60,7 +65,7 @@ export const useHouseStore = defineStore('houseStore', {
           },
           (error) => {
             console.error('아파트 정보 조회 실패:', error)
-          }
+          },
         )
       } catch (error) {
         console.error('Error in onBoundsChanged:', error)
@@ -138,23 +143,23 @@ export const useHouseStore = defineStore('houseStore', {
         console.log('data:', data)
         if (data && Array.isArray(data)) {
           // houses 배열 업데이트
-          this.houses = data.map(house => ({
+          this.houses = data.map((house) => ({
             aptName: house.aptName,
             aptSeq: house.aptSeq,
             latitude: house.latitude,
             longitude: house.longitude,
-            legalDong: house.legalDong
+            legalDong: house.legalDong,
           }))
 
           // markerPositions 업데이트 - 유효한 위도/경도만 필터링
           this.markerPositions = data
-            .filter(house => house.latitude && house.longitude)
-            .map(house => {
+            .filter((house) => house.latitude && house.longitude)
+            .map((house) => {
               const lat = parseFloat(house.latitude)
               const lng = parseFloat(house.longitude)
               return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
             })
-            .filter(position => position !== null)
+            .filter((position) => position !== null)
 
           console.log('houses:', this.houses)
           console.log('markerPositions:', this.markerPositions)
@@ -265,9 +270,11 @@ export const useHouseStore = defineStore('houseStore', {
         const lng = parseFloat(interest.longitude)
         if (!isNaN(lat) && !isNaN(lng)) {
           const position = [lat, lng]
-          if (!this.interestMarkerPositions.some(pos => 
-            pos[0] === position[0] && pos[1] === position[1]
-          )) {
+          if (
+            !this.interestMarkerPositions.some(
+              (pos) => pos[0] === position[0] && pos[1] === position[1],
+            )
+          ) {
             this.interestMarkerPositions.push(position)
           }
         }
@@ -278,8 +285,8 @@ export const useHouseStore = defineStore('houseStore', {
       if (interest.latitude && interest.longitude) {
         const lat = parseFloat(interest.latitude)
         const lng = parseFloat(interest.longitude)
-        this.interestMarkerPositions = this.interestMarkerPositions.filter(pos => 
-          pos[0] !== lat || pos[1] !== lng
+        this.interestMarkerPositions = this.interestMarkerPositions.filter(
+          (pos) => pos[0] !== lat || pos[1] !== lng,
         )
       }
     },
@@ -290,6 +297,105 @@ export const useHouseStore = defineStore('houseStore', {
 
     clearMarkerPositions() {
       this.markerPositions = []
-    }
+    },
+
+    async searchByAptName(aptName) {
+      this.clearHouses()
+
+      try {
+        const response = await new Promise((resolve, reject) => {
+          getHouseInfoByAptName(
+            aptName,
+            (response) => {
+              if (response.data && Array.isArray(response.data)) {
+                // houses 배열 업데이트
+                this.houses = response.data.map((house) => ({
+                  aptName: house.aptNm,
+                  aptSeq: house.aptSeq,
+                  latitude: house.latitude,
+                  longitude: house.longitude,
+                  legalDong: house.umdNm,
+                }))
+
+                // markerPositions 업데이트
+                this.markerPositions = response.data
+                  .filter((house) => house.latitude && house.longitude)
+                  .map((house) => {
+                    const lat = parseFloat(house.latitude)
+                    const lng = parseFloat(house.longitude)
+                    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                  })
+                  .filter((position) => position !== null)
+
+                console.log('검색된 아파트:', this.houses)
+                console.log('마커 위치:', this.markerPositions)
+              }
+              resolve(response)
+            },
+            reject,
+          )
+        })
+        return response.data
+      } catch (error) {
+        console.error('아파트 검색 실패:', error)
+        this.clearHouses()
+        return []
+      }
+    },
+
+    async getHouseListByAptName(aptName) {
+      console.log('아파트 이름으로 검색 시작:', aptName)
+      this.clearHouses()
+
+      try {
+        const response = await new Promise((resolve, reject) => {
+          getHouseInfoByAptName(
+            aptName,
+            (response) => {
+              console.log('검색 응답:', response)
+              if (response.data && Array.isArray(response.data)) {
+                // houses 배열 업데이트 - 동(legalDong) 값이 있는 데이터만 필터링
+                this.houses = response.data
+                  .filter((house) => house.umdNm) // null이나 빈 문자열이 아닌 데이터만 선택
+                  .map((house) => ({
+                    aptName: house.aptNm,
+                    aptSeq: house.aptSeq,
+                    latitude: house.latitude,
+                    longitude: house.longitude,
+                    legalDong: house.umdNm,
+                  }))
+
+                // markerPositions 업데이트 - 동(legalDong)과 좌표가 모두 있는 데이터만 선택
+                this.markerPositions = response.data
+                  .filter(
+                    (house) =>
+                      house.umdNm && // 동 값이 있고
+                      house.latitude &&
+                      house.longitude,
+                  )
+                  .map((house) => {
+                    const lat = parseFloat(house.latitude)
+                    const lng = parseFloat(house.longitude)
+                    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                  })
+                  .filter((position) => position !== null)
+
+                console.log('검색된 아파트:', this.houses)
+                console.log('마커 위치:', this.markerPositions)
+              }
+              resolve(response)
+            },
+            (error) => {
+              console.error('API 호출 실패:', error)
+              reject(error)
+            },
+          )
+        })
+        return response.data
+      } catch (error) {
+        console.error('아파트 검색 실패:', error)
+        return []
+      }
+    },
   },
 })

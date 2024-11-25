@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { 
-  getBoardsByAptSeq, 
-  getBoardById, 
+import {
+  getBoardsByAptSeq,
+  getBoardById,
   likeBoard,
   unlikeBoard,
   createBoard,
@@ -17,7 +17,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
     currentBoard: null,
     currentAptSeq: null,
     isLoading: false,
-    error: null
+    error: null,
   }),
 
   getters: {
@@ -31,7 +31,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
     async createNewBoard(board) {
       const houseStore = useHouseStore()
       const aptSeq = houseStore.selectedHouse?.aptSeq
-      
+
       // selectedHouse가 없거나 aptSeq가 없으면 에러
       if (!houseStore.selectedHouse || !aptSeq) {
         throw new Error('선택된 아파트가 없습니다.')
@@ -46,7 +46,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           (error) => {
             console.error('게시글 생성 실패:', error)
             throw error
-          }
+          },
         )
       } catch (error) {
         throw error
@@ -71,7 +71,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
             console.error('게시글 조회 실패:', error)
             this.error = '게시글을 불러오는데 실패했습니다.'
             this.currentBoard = null
-          }
+          },
         )
       } catch (error) {
         console.error('게시글 조회 중 에러:', error)
@@ -85,7 +85,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
     // 아파트별 게시글 목록 조회
     async fetchBoardsByAptSeq(aptSeq) {
       const houseStore = useHouseStore()
-      
+
       // selectedHouse가 없거나 aptSeq가 없으면 리턴
       if (!houseStore.selectedHouse || !aptSeq) {
         this.boards = []
@@ -106,7 +106,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
             console.error('게시글 목록 조회 실패:', error)
             this.error = '게시글을 불러오는데 실패했습니다.'
             this.boards = []
-          }
+          },
         )
       } catch (error) {
         console.error('게시글 목록 조회 중 에러:', error)
@@ -124,7 +124,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           boardId,
           boardData,
           (response) => {
-            const index = this.boards.findIndex(b => b.id === boardId)
+            const index = this.boards.findIndex((b) => b.id === boardId)
             if (index !== -1) {
               this.boards[index] = { ...this.boards[index], ...boardData }
             }
@@ -135,7 +135,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           (error) => {
             console.error('게시글 수정 실패:', error)
             throw error
-          }
+          },
         )
       } catch (error) {
         throw error
@@ -148,7 +148,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
         await deleteBoard(
           boardId,
           () => {
-            this.boards = this.boards.filter(b => b.id !== boardId)
+            this.boards = this.boards.filter((b) => b.id !== boardId)
             if (this.currentBoard?.id === boardId) {
               this.currentBoard = null
             }
@@ -156,7 +156,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           (error) => {
             console.error('게시글 삭제 실패:', error)
             throw error
-          }
+          },
         )
       } catch (error) {
         throw error
@@ -176,15 +176,15 @@ export const useAptBoardStore = defineStore('aptBoard', {
         } else {
           await unlikeBoard(boardId, userStore.userId)
         }
-        
+
         // 게시글 목록에서 해당 게시글 업데이트
-        const boardIndex = this.boards.findIndex(b => b.id === boardId)
+        const boardIndex = this.boards.findIndex((b) => b.id === boardId)
         if (boardIndex !== -1) {
           // 배열 요소를 새 객체로 교체하여 반응성 보장
           this.boards[boardIndex] = {
             ...this.boards[boardIndex],
             liked: isLiked,
-            likesCount: this.boards[boardIndex].likesCount + (isLiked ? 1 : -1)
+            likesCount: this.boards[boardIndex].likesCount + (isLiked ? 1 : -1),
           }
         }
 
@@ -193,7 +193,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           this.currentBoard = {
             ...this.currentBoard,
             liked: isLiked,
-            likesCount: this.currentBoard.likesCount + (isLiked ? 1 : -1)
+            likesCount: this.currentBoard.likesCount + (isLiked ? 1 : -1),
           }
         }
       } catch (error) {
@@ -210,7 +210,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           comment,
           (response) => {
             // 게시글 목록에서 해당 게시글의 댓글 수 증가
-            const board = this.boards.find(b => b.id === boardId)
+            const board = this.boards.find((b) => b.id === boardId)
             if (board) {
               board.commentsCount++
             }
@@ -222,7 +222,7 @@ export const useAptBoardStore = defineStore('aptBoard', {
           (error) => {
             console.error('댓글 작성 실패:', error)
             throw error
-          }
+          },
         )
       } catch (error) {
         throw error
@@ -235,6 +235,6 @@ export const useAptBoardStore = defineStore('aptBoard', {
       this.currentBoard = null
       this.currentAptSeq = null
       this.error = null
-    }
-  }
-}) 
+    },
+  },
+})
