@@ -83,4 +83,18 @@
 		SET profile_image = #{profileImage}
 		WHERE id = #{id}
 	</update>
+
+	<select id="findUserByEmail" parameterType="string" resultType="userDto">
+		SELECT id, email, name
+		FROM user
+		WHERE email = #{email}
+		AND is_deleted = FALSE
+	</select>
+
+	<update id="updatePassword" parameterType="map">
+		UPDATE user
+		SET password = #{newPassword}
+		WHERE id = #{userId}
+		AND is_deleted = FALSE
+	</update>
 </mapper>

@@ -21,4 +21,6 @@ public interface UserService {
     boolean changePassword(String userId, String currentPassword, String newPassword) throws Exception;
 
     void updateProfileImage(String userId, String profileImage) throws Exception;
+
+    boolean resetPassword(String email) throws Exception;
 }

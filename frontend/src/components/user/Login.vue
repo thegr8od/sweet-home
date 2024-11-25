@@ -75,7 +75,9 @@
               </label>
             </div>
             <div class="text-sm">
-              <a href="#" class="text-blue-600 hover:text-blue-500"> 비밀번호 찾기 </a>
+              <a href="#" class="text-blue-600 hover:text-blue-500" @click.prevent="openForgotPassword">
+                비밀번호 찾기
+              </a>
             </div>
           </div>
 
@@ -153,6 +155,12 @@
       </div>
     </div>
   </div>
+
+  <!-- 비밀번호 찾기 모달 추가 -->
+  <ForgotPassword
+    :is-open="showForgotPassword"
+    @close="closeForgotPassword"
+  />
 </template>
 
 <script setup>
@@ -161,6 +169,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { apiInstance } from '@/api/index'
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-vue-next'
+import ForgotPassword from './ForgotPassword.vue'
 
 const api = apiInstance()
 const router = useRouter()
@@ -169,6 +178,7 @@ const userStore = useUserStore()
 const isLoading = ref(false)
 const showPassword = ref(false)
 const loginError = ref('')
+const showForgotPassword = ref(false)
 
 const form = ref({
   id: '',
@@ -249,6 +259,14 @@ const loginWithKakao = () => {
   const scope = encodeURIComponent('profile_nickname profile_image')
   const kakaoURL = `https://kauth.kakao.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&prompt=select_account`
   window.location.href = kakaoURL
+}
+
+const openForgotPassword = () => {
+  showForgotPassword.value = true
+}
+
+const closeForgotPassword = () => {
+  showForgotPassword.value = false
 }
 </script>
 
