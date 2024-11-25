@@ -266,7 +266,10 @@ export default {
     }
 
     const isLongText = (text) => {
-      return text.length > 8 // 8자 이상이면 슬라이딩 적용
+      if (isExpanded.value) {
+        return text.length > 6 // 펼쳤을 때는 6자 이상이면 슬라이딩
+      }
+      return text.length > 12 // 접혔을 때는 12자 이상이면 슬라이딩
     }
 
     onMounted(() => {
