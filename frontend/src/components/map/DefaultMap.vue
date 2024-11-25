@@ -41,7 +41,10 @@ const setCenter = (position) => {
 }
 
 // 메서드를 외부로 노출
-defineExpose({ setCenter })
+defineExpose({
+  setCenter,
+  updateArea,
+})
 
 // 맵 리사이즈 이벤트 핸들러
 const handleMapResize = () => {
@@ -187,7 +190,11 @@ function initMap() {
     if (infowindow) {
       infowindow.close()
     }
-    updateArea()
+    if (houseStore.updateMapFlag) {
+      updateArea()
+    } else {
+      houseStore.setUpdateMapFlag(true)
+    }
   })
 }
 
@@ -255,13 +262,14 @@ function createMarker(position, index, isInterest) {
           parseFloat(interest.longitude) === position[1],
       )
 
-      // 실거래 정보 가져오기
+      // 실거래 정보 가져오기 - interestStore에서 직접 가져옴
       const dealInfo = house ? interestStore.interestDetails[house.aptSeq] : null
+      const houseDetail = dealInfo || houseStore.houseDetails[index]
 
       // 가격 변환 로직 추가
-      const formattedPrice = formatPrice(dealInfo?.maxPrice)
-      const formattedArea = dealInfo?.maxPriceArea
-        ? Math.round(parseFloat(dealInfo.maxPriceArea) / 3.3)
+      const formattedPrice = formatPrice(houseDetail?.maxPrice)
+      const formattedArea = houseDetail?.maxPriceArea
+        ? Math.round(parseFloat(houseDetail.maxPriceArea) / 3.3)
         : '?'
 
       const content = document.createElement('div')
@@ -403,49 +411,6 @@ function createMarker(position, index, isInterest) {
       addMarkerClickEvent(marker, position, index, false)
     }
   }
-
-  // markers.push(marker)
-
-  // // 마커 클릭 이벤트
-  // window.kakao.maps.event.addListener(marker, 'click', () => {
-  //   // 관심 마커인 경우와 일반 마커인 경우를 구분
-  //   // updateArea()
-  //   let targetHouse
-  //   if (isInterest) {
-  //     // const interestStore = useInterestStore()
-  //     targetHouse = interestStore.interests.find(
-  //       (interest) =>
-  //         parseFloat(interest.latitude) === position[0] &&
-  //         parseFloat(interest.longitude) === position[1],
-  //     )
-  //     // 관심 마커 클릭 시 해당 위치로 이동하고 줌 레벨 조정
-  //     map.setLevel(3)
-  //     map.panTo(markerPosition)
-  //   } else {
-  //     targetHouse = houses.value[index]
-  //   }
-
-  //   if (targetHouse) {
-  //     houseStore.setSelectedPosition({
-  //       lat: position[0],
-  //       lng: position[1],
-  //     })
-
-  //     houseStore.setSelectedHouse(targetHouse)
-
-  //     if (targetHouse.aptSeq) {
-  //       console.log('맵: aptSeq:', targetHouse.aptSeq)
-  //       houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
-  //     }
-  //   }
-  //   updateArea()
-  // })
-
-  // if (isInterest) {
-  //   interestMarkers.push(marker)
-  // } else {
-  //   markers.push(marker)
-  // }
 }
 
 function addMarkerClickEvent(marker, position, index, isInterest) {
@@ -633,6 +598,25 @@ function formatPrice(price) {
 
   // 정확히 n억인 경우
   return `${uk}억`
+}
+
+const handleMoveMap = ({ center, bounds, level }) => {
+  if (map) {
+    // 지도 중심 이동
+    const moveLatLng = new window.kakao.maps.LatLng(center.lat, center.lng)
+    map.setCenter(moveLatLng)
+
+    // 지도 레벨 설정
+    map.setLevel(level)
+
+    // bounds 설정
+    const sw = new window.kakao.maps.LatLng(bounds.minLat, bounds.minLng)
+    const ne = new window.kakao.maps.LatLng(bounds.maxLat, bounds.maxLng)
+    const mapBounds = new window.kakao.maps.LatLngBounds(sw, ne)
+
+    // bounds에 약간의 여유 공간을 주기 위해 extend 사용
+    map.setBounds(mapBounds, 50) // 50은 픽셀 단위의 padding
+  }
 }
 </script>
 

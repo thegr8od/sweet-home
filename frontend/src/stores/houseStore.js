@@ -25,6 +25,7 @@ export const useHouseStore = defineStore('houseStore', {
     showCommentWriting: false,
     selectedBoardId: null,
     houseDetails: [],
+    updateMapFlag: true,
   }),
 
   actions: {
@@ -309,6 +310,10 @@ export const useHouseStore = defineStore('houseStore', {
 
     clearMarkerPositions() {
       this.markerPositions = []
+    },
+
+    setUpdateMapFlag(flag) {
+      this.updateMapFlag = flag
     },
   },
 })

@@ -14,6 +14,7 @@
 
 <script>
 import { useHouseStore } from '@/stores/houseStore'
+import { useInterestStore } from '@/stores/interestStore'
 
 export default {
   name: 'InterestListItem',
@@ -27,8 +28,10 @@ export default {
   },
   setup() {
     const houseStore = useHouseStore()
+    const interestStore = useInterestStore()
     return {
       houseStore,
+      interestStore,
     }
   },
   methods: {
@@ -52,12 +55,12 @@ export default {
         latitude: this.interest.latitude,
         longitude: this.interest.longitude,
       }
-      
-      // houseStore의 상태 업데이트
-      this.houseStore.setSelectedHouse(selectedHouse)
 
-      // 아파트 상세 정보 가져오기
+      // 먼저 상세 정보를 가져옴
       await this.houseStore.getDetail({ aptSeq: this.interest.aptSeq })
+
+      // 그 다음 선택된 아파트 정보 설정
+      this.houseStore.setSelectedHouse(selectedHouse)
     },
     colorChange(flag) {
       this.isColor = flag
@@ -93,4 +96,4 @@ export default {
 .mouse-over-bgcolor {
   background-color: #f5f5f5;
 }
-</style> 
+</style>
