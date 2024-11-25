@@ -1,3 +1,4 @@
+
 <template>
   <div class="purchase-recommendation">
     <h3>매수 추천 분석</h3>
