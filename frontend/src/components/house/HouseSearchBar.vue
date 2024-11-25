@@ -26,17 +26,83 @@
         class="search-input"
         placeholder="주소나 건물명을 입력하세요"
         v-model="searchQuery"
+        @keyup.enter="handleSearch"
       />
       <button class="search-button" @click="handleSearch">검색</button>
+    </div>
+    <div class="popular-search" v-if="popularKeywords.length > 0">
+      <div class="popular-title" @click="toggleExpand">
+        실시간 인기 검색어
+        <span class="live-dot"></span>
+        <span class="toggle-icon">{{ isExpanded ? '▼' : '▶' }}</span>
+      </div>
+      <div v-if="!isExpanded" class="popular-single-row">
+        <div class="popular-item-single" @click="handleKeywordClick(currentKeyword.keyword)">
+          <span class="rank">{{ currentIndex + 1 }}</span>
+          <div class="keyword-wrapper">
+            <div class="keyword" :class="{ marquee: isLongText(currentKeyword.keyword) }">
+              <span class="keyword-text">{{ currentKeyword.keyword }}</span>
+            </div>
+          </div>
+          <span class="change-indicator" :class="getChangeClass(currentKeyword)">
+            {{ getChangeStatus(currentKeyword) }}
+          </span>
+        </div>
+      </div>
+      <div v-else class="popular-columns">
+        <div class="popular-column">
+          <div
+            v-for="(keyword, index) in leftKeywords"
+            :key="keyword.keyword"
+            class="popular-item"
+            @click="handleKeywordClick(keyword.keyword)"
+          >
+            <span class="rank">{{ index + 1 }}</span>
+            <div class="keyword-wrapper">
+              <div class="keyword" :class="{ marquee: isLongText(keyword.keyword) }">
+                <span class="keyword-text">{{ keyword.keyword }}</span>
+                <span class="keyword-text" v-if="isLongText(keyword.keyword)">{{
+                  keyword.keyword
+                }}</span>
+              </div>
+            </div>
+            <span class="change-indicator" :class="getChangeClass(keyword)">
+              {{ getChangeStatus(keyword) }}
+            </span>
+          </div>
+        </div>
+        <div class="popular-column">
+          <div
+            v-for="(keyword, index) in rightKeywords"
+            :key="keyword.keyword"
+            class="popular-item"
+            @click="handleKeywordClick(keyword.keyword)"
+          >
+            <span class="rank">{{ index + 4 }}</span>
+            <div class="keyword-wrapper">
+              <div class="keyword" :class="{ marquee: isLongText(keyword.keyword) }">
+                <span class="keyword-text">{{ keyword.keyword }}</span>
+                <span class="keyword-text" v-if="isLongText(keyword.keyword)">{{
+                  keyword.keyword
+                }}</span>
+              </div>
+            </div>
+            <span class="change-indicator" :class="getChangeClass(keyword)">
+              {{ getChangeStatus(keyword) }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAddressStore } from '@/stores/addressStore'
 import { useHouseStore } from '@/stores/houseStore'
 import { storeToRefs } from 'pinia'
+import { saveSearchLog, getPopularSearchKeywords } from '@/api/searchLog'
 
 export default {
   name: 'HouseSearchBar',
@@ -48,8 +114,81 @@ export default {
     const selectedSido = ref('')
     const selectedGugun = ref('')
     const selectedDong = ref('')
+    const popularKeywords = ref([])
+    const previousKeywords = ref([])
+    const rankChanges = ref({})
+    const isExpanded = ref(false)
+    const currentIndex = ref(0)
+    let rotateInterval = null
 
     const { sidos, guguns, dongs } = storeToRefs(addressStore)
+
+    const leftKeywords = computed(() => popularKeywords.value.slice(0, 3))
+    const rightKeywords = computed(() => popularKeywords.value.slice(3, 6))
+
+    const currentKeyword = computed(() => {
+      return popularKeywords.value[currentIndex.value] || { keyword: '' }
+    })
+
+    const rotateKeywords = () => {
+      if (!isExpanded.value && popularKeywords.value.length > 0) {
+        currentIndex.value = (currentIndex.value + 1) % popularKeywords.value.length
+      }
+    }
+
+    const toggleExpand = () => {
+      isExpanded.value = !isExpanded.value
+      if (isExpanded.value) {
+        clearInterval(rotateInterval)
+      } else {
+        startRotation()
+      }
+    }
+
+    const startRotation = () => {
+      rotateInterval = setInterval(rotateKeywords, 3000) // 3초마다 변경
+    }
+
+    // 순위 변동 상태 계산 및 저장
+    const updateRankChanges = (newKeywords) => {
+      if (previousKeywords.value.length === 0) {
+        // 초기 로드시에는 변동 없음으로 설정
+        newKeywords.forEach((keyword) => {
+          rankChanges.value[keyword.keyword] = '-'
+        })
+        return
+      }
+
+      newKeywords.forEach((keyword, index) => {
+        const currentRank = index + 1
+        const prevKeyword = previousKeywords.value.find((k) => k.keyword === keyword.keyword)
+
+        if (!prevKeyword) {
+          rankChanges.value[keyword.keyword] = 'new'
+        } else {
+          const prevRank =
+            previousKeywords.value.findIndex((k) => k.keyword === keyword.keyword) + 1
+          if (currentRank < prevRank) {
+            rankChanges.value[keyword.keyword] = '▲'
+          } else if (currentRank > prevRank) {
+            rankChanges.value[keyword.keyword] = '▼'
+          }
+          // 순위가 같으면 이전 상태 유지
+        }
+      })
+    }
+
+    const getChangeStatus = (keyword) => {
+      return rankChanges.value[keyword.keyword] || '-'
+    }
+
+    const getChangeClass = (keyword) => {
+      const status = rankChanges.value[keyword.keyword]
+      if (status === '▲') return 'up'
+      if (status === '▼') return 'down'
+      if (status === 'new') return 'new'
+      return ''
+    }
 
     const getGugun = async () => {
       selectedGugun.value = ''
@@ -110,11 +249,71 @@ export default {
 
         // 지도 영역 업데이트
         emit('updateArea')
+
       }
+    }
+
+    const fetchPopularKeywords = async () => {
+      try {
+        await getPopularSearchKeywords(
+          6,
+          (response) => {
+            previousKeywords.value = [...popularKeywords.value]
+            const newKeywords = response.data
+            updateRankChanges(newKeywords)
+            popularKeywords.value = newKeywords
+          },
+          (error) => {
+            console.error('인기 검색어 조회 실패:', error)
+          },
+        )
+      } catch (error) {
+        console.error('인기 검색어 조회 실패:', error)
+      }
+    }
+
+    const handleSearch = async () => {
+      console.log('검색 시작:', searchQuery.value)
+      if (!searchQuery.value.trim()) {
+        return
+      }
+
+      try {
+        await saveSearchLog(
+          searchQuery.value,
+          async () => {
+            console.log('검색어 로그 저장 성공')
+            await fetchPopularKeywords()
+          },
+          (error) => {
+            console.error('검색어 로그 저장 실패:', error)
+          },
+        )
+
+        await houseStore.getHouseListByAptName(searchQuery.value)
+        console.log('검색 완료')
+      } catch (error) {
+        console.error('아파트 검색 실패:', error)
+      }
+    }
+
+    const handleKeywordClick = async (keyword) => {
+      searchQuery.value = keyword
+      await handleSearch()
+    }
+
+    const isLongText = (text) => {
+      return text.length > 8 // 8자 이상이면 슬라이딩 적용
     }
 
     onMounted(() => {
       addressStore.getSido()
+      fetchPopularKeywords()
+      startRotation()
+    })
+
+    onUnmounted(() => {
+      clearInterval(rotateInterval)
     })
 
     return {
@@ -128,6 +327,18 @@ export default {
       getGugun,
       getDong,
       getDeals,
+      handleSearch,
+      popularKeywords,
+      handleKeywordClick,
+      leftKeywords,
+      rightKeywords,
+      getChangeStatus,
+      getChangeClass,
+      isLongText,
+      isExpanded,
+      currentKeyword,
+      currentIndex,
+      toggleExpand,
     }
   },
 }
@@ -212,5 +423,151 @@ export default {
 .search-button:hover {
   background-color: #1976d2;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.popular-search {
+  margin-top: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.popular-columns {
+  display: flex;
+  gap: 24px;
+}
+
+.popular-column {
+  flex: 1;
+  width: 50%;
+}
+
+.popular-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.rank {
+  flex: 0 0 24px;
+  font-weight: 600;
+  color: #1971c2;
+}
+
+.keyword-wrapper {
+  flex: 1;
+  overflow: hidden;
+  margin: 0 8px;
+  position: relative;
+}
+
+.keyword {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.keyword.marquee {
+  animation: marquee 12s linear infinite;
+}
+
+.keyword.marquee:hover {
+  animation-play-state: paused;
+}
+
+.keyword-text {
+  padding-right: 24px;
+}
+
+.change-indicator {
+  flex: 0 0 20px;
+  text-align: center;
+  font-size: 12px;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.change-indicator.up {
+  color: #f03e3e;
+}
+.change-indicator.down {
+  color: #1c7ed6;
+}
+.change-indicator.new {
+  color: #37b24d;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #ff4b4b;
+  border-radius: 50%;
+  margin-left: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+}
+
+.popular-title {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  margin-left: auto;
+  font-size: 12px;
+  color: #868e96;
+}
+
+.popular-single-row {
+  padding: 8px 12px;
+}
+
+.popular-item-single {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.popular-columns {
+  display: flex;
+  gap: 24px;
+  transition: all 0.3s ease;
+}
+
+.toggle-icon {
+  margin-left: auto;
+  font-size: 12px;
+  color: #868e96;
 }
 </style>

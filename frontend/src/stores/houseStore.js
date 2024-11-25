@@ -5,8 +5,11 @@ import {
   getHouseInfoByAptSeq,
   houseDealListByAptSeq,
   getHouseDealsByMapBounds,
-} from '@/api/house.js'
+  getHouseInfoByAptName,
+  } from '@/api/house.js'
 import { useInterestStore } from '@/stores/interestStore'
+=======
+
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -34,6 +37,7 @@ export const useHouseStore = defineStore('houseStore', {
       console.log(bounds)
       const interestStore = useInterestStore()
 
+
       try {
         await getHouseDealsByMapBounds(
           bounds,
@@ -59,6 +63,7 @@ export const useHouseStore = defineStore('houseStore', {
                 })
                 .filter((position) => position !== null)
 
+
               // 각 아파트의 최고가 정보 저장
               this.houseDetails = data.map((house) => ({
                 maxPrice: house.maxPrice || '?',
@@ -67,6 +72,7 @@ export const useHouseStore = defineStore('houseStore', {
 
               // 관심 매물 정보 업데이트
               interestStore.updateInterestDetails(this.houses, this.houseDetails)
+
 
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
@@ -312,8 +318,107 @@ export const useHouseStore = defineStore('houseStore', {
       this.markerPositions = []
     },
 
+
     setUpdateMapFlag(flag) {
       this.updateMapFlag = flag
+
+    async searchByAptName(aptName) {
+      this.clearHouses()
+
+      try {
+        const response = await new Promise((resolve, reject) => {
+          getHouseInfoByAptName(
+            aptName,
+            (response) => {
+              if (response.data && Array.isArray(response.data)) {
+                // houses 배열 업데이트
+                this.houses = response.data.map((house) => ({
+                  aptName: house.aptNm,
+                  aptSeq: house.aptSeq,
+                  latitude: house.latitude,
+                  longitude: house.longitude,
+                  legalDong: house.umdNm,
+                }))
+
+                // markerPositions 업데이트
+                this.markerPositions = response.data
+                  .filter((house) => house.latitude && house.longitude)
+                  .map((house) => {
+                    const lat = parseFloat(house.latitude)
+                    const lng = parseFloat(house.longitude)
+                    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                  })
+                  .filter((position) => position !== null)
+
+                console.log('검색된 아파트:', this.houses)
+                console.log('마커 위치:', this.markerPositions)
+              }
+              resolve(response)
+            },
+            reject,
+          )
+        })
+        return response.data
+      } catch (error) {
+        console.error('아파트 검색 실패:', error)
+        this.clearHouses()
+        return []
+      }
+    },
+
+    async getHouseListByAptName(aptName) {
+      console.log('아파트 이름으로 검색 시작:', aptName)
+      this.clearHouses()
+
+      try {
+        const response = await new Promise((resolve, reject) => {
+          getHouseInfoByAptName(
+            aptName,
+            (response) => {
+              console.log('검색 응답:', response)
+              if (response.data && Array.isArray(response.data)) {
+                // houses 배열 업데이트 - 동(legalDong) 값이 있는 데이터만 필터링
+                this.houses = response.data
+                  .filter((house) => house.umdNm) // null이나 빈 문자열이 아닌 데이터만 선택
+                  .map((house) => ({
+                    aptName: house.aptNm,
+                    aptSeq: house.aptSeq,
+                    latitude: house.latitude,
+                    longitude: house.longitude,
+                    legalDong: house.umdNm,
+                  }))
+
+                // markerPositions 업데이트 - 동(legalDong)과 좌표가 모두 있는 데이터만 선택
+                this.markerPositions = response.data
+                  .filter(
+                    (house) =>
+                      house.umdNm && // 동 값이 있고
+                      house.latitude &&
+                      house.longitude,
+                  )
+                  .map((house) => {
+                    const lat = parseFloat(house.latitude)
+                    const lng = parseFloat(house.longitude)
+                    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                  })
+                  .filter((position) => position !== null)
+
+                console.log('검색된 아파트:', this.houses)
+                console.log('마커 위치:', this.markerPositions)
+              }
+              resolve(response)
+            },
+            (error) => {
+              console.error('API 호출 실패:', error)
+              reject(error)
+            },
+          )
+        })
+        return response.data
+      } catch (error) {
+        console.error('아파트 검색 실패:', error)
+        return []
+      }
     },
   },
 })

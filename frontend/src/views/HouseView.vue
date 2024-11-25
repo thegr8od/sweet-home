@@ -127,7 +127,7 @@ export default {
 }
 
 .list-div {
-  height: calc(100% - 180px);
+  height: calc(100% - 300px);
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -236,7 +236,7 @@ export default {
 .interest-list {
   position: fixed;
   top: 80px; /* 상단에서 약간의 여백 */
-  right: 20px; 
+  right: 20px;
   width: 300px; /* 적절한 너비 */
   max-height: calc(100vh - 100px); /* 화면 높이에서 상하 여백을 뺀 높이 */
   background: white;

@@ -23,11 +23,8 @@
       <!-- 게시글 상세 -->
       <div v-else-if="currentBoard" class="comment-list">
         <!-- 원본 게시글 -->
-        <HouseComment 
-          :board="currentBoard" 
-          :is-first="true" 
-        />
-        
+        <HouseComment :board="currentBoard" :is-first="true" />
+
         <!-- 댓글 목록 -->
         <div v-if="comments.length > 0">
           <HouseReComment
@@ -35,17 +32,14 @@
             :key="comment.id"
             :comment="comment"
             @like-updated="handleLikeUpdated"
+            @comment-deleted="handleCommentDeleted"
           />
         </div>
-        <div v-else class="p-4 text-center text-gray-500">
-          작성된 댓글이 없습니다.
-        </div>
+        <div v-else class="p-4 text-center text-gray-500">작성된 댓글이 없습니다.</div>
       </div>
 
       <!-- 게시글이 없는 경우 -->
-      <div v-else class="p-4 text-center text-gray-500">
-        게시글을 찾을 수 없습니다.
-      </div>
+      <div v-else class="p-4 text-center text-gray-500">게시글을 찾을 수 없습니다.</div>
     </div>
 
     <!-- 댓글 입력바 -->
@@ -86,7 +80,7 @@ const goBack = () => {
 const fetchComments = async () => {
   isLoading.value = true
   error.value = null
-  
+
   try {
     const response = await getComments(
       houseStore.selectedBoardId,
@@ -97,7 +91,7 @@ const fetchComments = async () => {
       (error) => {
         console.error('댓글 목록 조회 실패:', error)
         error.value = '댓글을 불러오는데 실패했습니다.'
-      }
+      },
     )
   } catch (err) {
     console.error('댓글 조회 중 에러:', err)
@@ -133,12 +127,25 @@ const handleLikeUpdated = async (commentId, isLiked) => {
   }
 }
 
+// 댓글 삭제 이벤트 핸들러 추가
+const handleCommentDeleted = async (commentId) => {
+  try {
+    const boardId = houseStore.selectedBoardId
+    if (boardId) {
+      await aptBoardStore.fetchBoardDetail(boardId) // 게시글 상세 정보 갱신
+      await fetchComments() // 댓글 목록 갱신
+    }
+  } catch (error) {
+    console.error('댓글 삭제 후 데이터 새로고침 중 에러:', error)
+  }
+}
+
 // 컴포넌트 마운트 시 게시글 정보와 댓글 목록 조회
 onMounted(async () => {
   const boardId = houseStore.selectedBoardId
   if (boardId) {
-    await aptBoardStore.fetchBoardDetail(boardId)  // 게시글 상세 정보 조회
-    await fetchComments()  // 댓글 목록 조회
+    await aptBoardStore.fetchBoardDetail(boardId) // 게시글 상세 정보 조회
+    await fetchComments() // 댓글 목록 조회
   }
 })
 </script>
