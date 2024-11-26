@@ -199,6 +199,11 @@ function initMap() {
       houseStore.setUpdateMapFlag(true)
     }
   })
+
+  // 지도 이동이 완료되면 인포윈도우 표시
+  window.kakao.maps.event.addListener(map, 'idle', function () {
+    showInfoWindow(selectedPosition.value)
+  })
 }
 
 function updateArea() {
@@ -357,7 +362,7 @@ function createMarker(position, index, isInterest) {
   } else {
     // 레벨이 5미만 (오버레이 마커 사용)
     if (level < 8) {
-      const house = houses.value[index]
+      // const house = houses.value[index]
       const houseDetail = houseStore.houseDetails[index]
 
       // 가격 변환 로직 추가
@@ -495,16 +500,6 @@ function moveToPosition(position) {
   if (!map || !position) return
 
   const moveLatLng = new window.kakao.maps.LatLng(position.lat, position.lng)
-
-  // idle 이벤트 핸들러 생성
-  const idleHandler = () => {
-    showInfoWindow(position)
-    // 이벤트 리스너 제거 (한 번만 실행되도록)
-    window.kakao.maps.event.removeListener(map, 'idle', idleHandler)
-  }
-
-  // idle 이벤트 리스너 등록
-  window.kakao.maps.event.addListener(map, 'idle', idleHandler)
 
   // 지도 이동
   map.panTo(moveLatLng)
@@ -664,6 +659,39 @@ function formatPrice(price) {
 
   // 정확히 n억인 경우
   return `${uk}억`
+}
+
+const showInfo = (house, index) => {
+  if (!house) return
+
+  // 실거래 정보 가져오기 - interestStore에서 직접 가져옴
+  const dealInfo = house ? interestStore.interestDetails[house.aptSeq] : null
+  const houseDetail = dealInfo || houseStore.houseDetails[index]
+
+  // 관심 등록 여부 확인
+  const isInterest = house.isInterest || false
+
+  // 인포윈도우에 표시할 정보 설정
+  const infoContent = {
+    aptName: house.aptName,
+    legalDong: house.legalDong,
+    roadName: house.roadName || '',
+    roadNameBonbun: house.roadNameBonbun || '',
+    roadNameBubun: house.roadNameBubun || '',
+    buildYear: house.buildYear || '',
+    jibun: house.jibun || '',
+    dong: house.dong || '',
+    isInterest: isInterest, // 관심 등록 여부 추가
+    recentPrice: houseDetail?.recentPrice || '정보없음',
+    dealYear: houseDetail?.dealYear || '',
+    dealMonth: houseDetail?.dealMonth || '',
+    area: houseDetail?.area || '',
+    floor: houseDetail?.floor || '',
+  }
+
+  // 인포윈도우 표시
+  showInfoWindow.value = true
+  selectedHouse.value = infoContent
 }
 </script>
 

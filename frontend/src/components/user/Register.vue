@@ -185,6 +185,10 @@
 </template>
 
 <script setup>
+defineOptions({
+  name: 'UserRegister',
+})
+
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiInstance } from '@/api/index'

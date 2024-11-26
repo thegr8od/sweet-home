@@ -35,15 +35,12 @@
 </template>
 
 <script setup>
+defineOptions({
+  name: 'PropertyInsight',
+})
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 // 이미지 import
-import apartmentImg from '@/assets/img/insight/apartment.jpg'
-import houseImg from '@/assets/img/insight/house.jpg'
-import salesImg from '@/assets/img/insight/sales.jpg'
-import subscriptionImg from '@/assets/img/insight/subscription.jpg'
-import rentImg from '@/assets/img/insight/rent.jpg'
-import loanImg from '@/assets/img/insight/loan.jpg'
 const getCategoryImage = (description) => {
   const categoryImages = {
     // 금융/대출/정책 관련 이미지 (비즈니스/문서/회의 이미지)
