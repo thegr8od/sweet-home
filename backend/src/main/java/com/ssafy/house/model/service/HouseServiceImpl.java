@@ -9,6 +9,7 @@ import com.ssafy.house.mapper.HouseMapper;
 import com.ssafy.house.model.HouseDealResponseDto;
 import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
+import com.ssafy.house.model.HouseDealCoordinateDto;
 
 @Service
 public class HouseServiceImpl implements HouseService {
@@ -70,6 +71,11 @@ public class HouseServiceImpl implements HouseService {
 	@Override
 	public List<HouseDealSimpleResponseDto> getHouseDealsByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit) {
 		return houseMapper.getHouseDealsByCoordinates(minLat, maxLat, minLng, maxLng, limit);
+	}
+
+	@Override
+	public List<HouseDealCoordinateDto> getHouseDealCoordinateByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit) {
+		return houseMapper.getHouseDealCoordinateByCoordinates(minLat, maxLat, minLng, maxLng, limit);
 	}
 
 }

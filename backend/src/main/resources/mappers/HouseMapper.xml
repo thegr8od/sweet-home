@@ -202,4 +202,26 @@
     ORDER BY aptName
 </select>
 
+
+<!-- 특정 좌표 범위 내의 아파트 실거래 정보 조회 (중복 제거, 랜덤 선택) -->
+<select id="getHouseDealCoordinateByCoordinates" parameterType="map"
+    resultType="com.ssafy.house.model.HouseDealCoordinateDto">
+    SELECT * FROM (
+        SELECT 
+            hi.apt_seq AS aptSeq,
+            hi.apt_nm AS aptName,
+            hi.umd_nm AS legalDong,
+            hi.latitude AS latitude,
+            hi.longitude AS longitude
+        FROM houseinfos hi
+        WHERE hi.latitude BETWEEN #{minLat} AND #{maxLat}
+        AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+        ORDER BY RAND()
+        LIMIT #{limit}
+    ) as random_houses
+    ORDER BY aptName
+</select>
+
+
+
 </mapper>

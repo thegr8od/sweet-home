@@ -28,6 +28,21 @@ function getHouseDealsByMapBounds(bounds, success, fail) {
     .catch(fail)
 }
 
+function getHouseDealCoordinateByMapBounds(bounds, success, fail) {
+  api
+    .get(`/house/map/coordinate`, {
+      params: {
+        minLat: bounds.minLat,
+        maxLat: bounds.maxLat,
+        minLng: bounds.minLng,
+        maxLng: bounds.maxLng,
+        limit: bounds.limit,
+      },
+    })
+    .then(success)
+    .catch(fail)
+}
+
 function getHouseInfoByAptName(aptName, success, fail) {
   api
     .get(`/house/info`, { params: { aptName: aptName } })
@@ -40,5 +55,6 @@ export {
   getHouseInfoByAptSeq,
   houseDealListByAptSeq,
   getHouseDealsByMapBounds,
+  getHouseDealCoordinateByMapBounds,
   getHouseInfoByAptName,
 }

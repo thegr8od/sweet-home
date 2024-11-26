@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import com.ssafy.house.model.HouseDealResponseDto;
 import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
-
+import com.ssafy.house.model.HouseDealCoordinateDto;
 @Mapper
 public interface HouseMapper {
 
@@ -45,6 +45,14 @@ public interface HouseMapper {
 	);
 
 	List<HouseDealSimpleResponseDto> getHouseDealsByCoordinates(
+		@Param("minLat") String minLat, 
+		@Param("maxLat") String maxLat,
+		@Param("minLng") String minLng, 
+		@Param("maxLng") String maxLng,
+		@Param("limit") Integer limit
+	);
+
+	List<HouseDealCoordinateDto> getHouseDealCoordinateByCoordinates(
 		@Param("minLat") String minLat, 
 		@Param("maxLat") String maxLat,
 		@Param("minLng") String minLng, 
