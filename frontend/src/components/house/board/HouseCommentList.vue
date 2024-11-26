@@ -5,7 +5,7 @@
       <button class="back-button" @click="goBack">
         <ArrowLeftIcon class="w-5 h-5" />
       </button>
-      <h2 class="header-title">단지글</h2>
+      <h2 class="header-title">단지글 목록</h2>
     </div>
 
     <!-- 로딩 상태 -->
