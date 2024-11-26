@@ -57,7 +57,7 @@ const handleMapResize = () => {
   }
 }
 
-// selectedPosition 변경 감지
+// selectedPosition 변경 감지 수정
 watch(
   selectedPosition,
   (newPosition) => {
@@ -66,6 +66,9 @@ watch(
       // 지도 레벨을 조정하고 위치로 이동
       map.setLevel(3) // 원하는 레벨로 설정
       moveToPosition(newPosition)
+    } else if (!newPosition && infowindow) {
+      // 선택이 해제된 경우 인포윈도우 닫기
+      infowindow.close()
     }
   },
   { deep: true },
@@ -255,6 +258,11 @@ function createMarker(position, index, isInterest) {
     selectedPosition.value.lat === position[0] &&
     selectedPosition.value.lng === position[1]
 
+  // 선택된 마커인 경우 인포윈도우 표시
+  if (isSelected) {
+    showInfoWindow(selectedPosition.value)
+  }
+
   let marker
   if (isInterest) {
     if (level < 8) {
@@ -269,10 +277,11 @@ function createMarker(position, index, isInterest) {
       const houseDetail = dealInfo || houseStore.houseDetails[index]
 
       // 가격 변환 로직 추가
-      const formattedPrice = formatPrice(houseDetail?.maxPrice)
-      const formattedArea = houseDetail?.maxPriceArea
-        ? Math.round(parseFloat(houseDetail.maxPriceArea) / 3.3)
-        : '?'
+      const formattedPrice = formatPrice(houseDetail?.maxPrice || houseDetail?.tradeAmount)
+      const formattedArea =
+        houseDetail?.maxPriceArea || houseDetail?.excluUseAr
+          ? Math.round(parseFloat(houseDetail.maxPriceArea || houseDetail.excluUseAr) / 3.3)
+          : '?'
 
       const content = document.createElement('div')
       content.className = `inline-flex flex-col items-center w-auto cursor-pointer ${
@@ -292,16 +301,16 @@ function createMarker(position, index, isInterest) {
         'w-16 bg-white text-red-500 px-2 py-0.5 rounded-b-md text-xs font-medium text-center border border-red-500 border-t-0'
       bottomSection.innerHTML = `<span>${formattedPrice}</span>`
 
-      // Triangle pointer
-      const triangle = document.createElement('div')
-      triangle.className =
-        'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white'
-      triangle.style.filter = 'drop-shadow(0 1px 0 rgb(239 68 68))'
+      // // Triangle pointer
+      // const triangle = document.createElement('div')
+      // triangle.className =
+      //   'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-white'
+      // triangle.style.filter = 'drop-shadow(0 1px 0 rgb(239 68 68))'
 
       // 요소들을 조합
       content.appendChild(topSection)
       content.appendChild(bottomSection)
-      content.appendChild(triangle)
+      // content.appendChild(triangle)
 
       // 클릭 이벤트 추가
       content.onclick = () => {
@@ -434,17 +443,21 @@ function handleMarkerClick(position, index, isInterest) {
   }
 
   if (targetHouse) {
-    houseStore.setSelectedPosition({
+    const newPosition = {
       lat: position[0],
       lng: position[1],
-    })
-
+    }
+    houseStore.setSelectedPosition(newPosition)
     houseStore.setSelectedHouse(targetHouse)
 
     if (targetHouse.aptSeq) {
       houseStore.getDetail({ aptSeq: targetHouse.aptSeq })
     }
+
+    // 인포윈도우 표시 추가
+    showInfoWindow(newPosition)
   }
+  updateArea()
 }
 
 // 일반 마커만 업데이트하는 함수 수정
@@ -477,92 +490,143 @@ function updateAllMarkers(positions) {
   }
 }
 
-// 위치로 이동하는 메서드
+// 위치로 이동하는 메서드 수정
 function moveToPosition(position) {
   if (!map || !position) return
 
   const moveLatLng = new window.kakao.maps.LatLng(position.lat, position.lng)
-  map.panTo(moveLatLng)
 
-  // 이동이 완료된 후 한 번만 인포윈도우 표시
-  setTimeout(() => {
+  // idle 이벤트 핸들러 생성
+  const idleHandler = () => {
     showInfoWindow(position)
-  }, 300)
+    // 이벤트 리스너 제거 (한 번만 실행되도록)
+    window.kakao.maps.event.removeListener(map, 'idle', idleHandler)
+  }
+
+  // idle 이벤트 리스너 등록
+  window.kakao.maps.event.addListener(map, 'idle', idleHandler)
+
+  // 지도 이동
+  map.panTo(moveLatLng)
 }
 
 // 인포윈도우 표시 메서드 수정
-function showInfoWindow(position) {
-  if (!map || !position) return
+function showInfoWindow(pos) {
+  if (!map || !pos) return
 
   if (infowindow) {
     infowindow.close()
   }
 
-  const markerIndex = markerPositions.value.findIndex(
-    (pos) =>
-      Math.abs(pos[0] - position.lat) < 0.0000001 && Math.abs(pos[1] - position.lng) < 0.0000001,
+  // 일반 마커와 관심 마커 모두에서 찾기
+  let house = null
+  let isInterest = false
+
+  // 먼저 관심 마커에서 찾기
+  const interestHouse = interestStore.interests.find(
+    (interest) =>
+      Math.abs(parseFloat(interest.latitude) - pos.lat) < 0.0000001 &&
+      Math.abs(parseFloat(interest.longitude) - pos.lng) < 0.0000001,
   )
 
-  if (markerIndex !== -1) {
-    const house = houses.value[markerIndex]
-    const marker = markers[markerIndex]
-    const recentDeal = houseStore.aptDeals?.[0] || {}
+  if (interestHouse) {
+    house = interestHouse
+    isInterest = true
+  } else {
+    // 일반 마커에서 찾기
+    const markerIndex = markerPositions.value.findIndex(
+      (position) =>
+        Math.abs(position[0] - pos.lat) < 0.0000001 && Math.abs(position[1] - pos.lng) < 0.0000001,
+    )
+    if (markerIndex !== -1) {
+      house = houses.value[markerIndex]
+    }
+  }
 
-    if (house && marker) {
-      infowindow = new window.kakao.maps.InfoWindow({
-        content: `
-          <div style="padding: 12px; width: 250px; font-family: 'Spoqa Han Sans Neo', sans-serif;">
-            <div style="
-              border-bottom: 2px solid #93c5fd;
-              margin-bottom: 10px;
-              padding-bottom: 6px;
-            ">
-              <h4 style="
-                margin: 0 0 3px 0;
-                font-size: 15px;
-                font-weight: 600;
-                color: #3b82f6;
-              ">${house.aptName}</h4>
-              <p style="
-                margin: 0;
-                font-size: 12px;
-                color: #94a3b8;
-              ">${house.legalDong}</p>
-            </div>
+  if (house) {
+    const level = map.getLevel()
+    const markerPosition = new window.kakao.maps.LatLng(
+      isInterest ? parseFloat(house.latitude) : pos.lat,
+      isInterest ? parseFloat(house.longitude) : pos.lng,
+    )
 
-            <div style="
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 6px;
-              font-size: 12px;
-            ">
-              <div style="color: #64748b;">
-                <span style="color: #94a3b8;">건축년도</span><br>
-                <strong>${houseStore.aptInfo?.buildYear || '정보음'}</strong>
-              </div>
-              <div style="color: #64748b;">
-                <span style="color: #94a3b8;">전용면적</span><br>
-                <strong>${recentDeal.excluUseAr ? recentDeal.excluUseAr + '㎡' : '정보없음'}</strong>
-              </div>
-              <div style="
-                grid-column: span 2;
-                margin-top: 4px;
-                padding-top: 6px;
-                border-top: 1px solid #e2e8f0;
-                text-align: right;
-              ">
-                <span style="
-                  font-size: 14px;
-                  font-weight: 600;
-                  color: #3b82f6;
-                ">${recentDeal.tradeAmount ? formatPrice(recentDeal.tradeAmount) : '정보없음'}</span>
-              </div>
-            </div>
+    const recentDeal = isInterest
+      ? interestStore.interestDetails[house.aptSeq]
+      : houseStore.aptDeals?.[0] || {}
+
+    const content = `
+      <div style="padding: 12px; width: 250px; font-family: 'Spoqa Han Sans Neo', sans-serif;">
+        <div style="
+          border-bottom: 2px solid ${isInterest ? '#ef4444' : '#93c5fd'};
+          margin-bottom: 10px;
+          padding-bottom: 6px;
+        ">
+          <h4 style="
+            margin: 0 0 3px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: ${isInterest ? '#ef4444' : '#3b82f6'};
+          ">${house.aptName}</h4>
+          <p style="
+            margin: 0;
+            font-size: 12px;
+            color: #94a3b8;
+          ">${house.legalDong}</p>
+        </div>
+
+        <div style="
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+          font-size: 12px;
+        ">
+          <div style="color: #64748b;">
+            <span style="color: #94a3b8;">건축년도</span><br>
+            <strong>${houseStore.aptInfo?.buildYear || '정보없음'}</strong>
           </div>
-        `,
-        zIndex: 3,
+          <div style="color: #64748b;">
+            <span style="color: #94a3b8;">전용면적</span><br>
+            <strong>${recentDeal.excluUseAr ? recentDeal.excluUseAr + '㎡' : '정보없음'}</strong>
+          </div>
+          <div style="
+            grid-column: span 2;
+            margin-top: 4px;
+            padding-top: 6px;
+            border-top: 1px solid #e2e8f0;
+            text-align: right;
+          ">
+            <span style="
+              font-size: 14px;
+              font-weight: 600;
+              color: ${isInterest ? '#ef4444' : '#3b82f6'};
+            ">${recentDeal.tradeAmount ? formatPrice(recentDeal.tradeAmount) : '정보없음'}</span>
+          </div>
+        </div>
+      </div>
+    `
+
+    infowindow = new window.kakao.maps.InfoWindow({
+      position: markerPosition,
+      content: content,
+      zIndex: 3,
+    })
+
+    // 레벨에 따라 다른 방식으로 인포윈도우 표시
+    if (level < 8) {
+      infowindow.setMap(map)
+    } else {
+      // 클러스터 모드에서는 마커를 찾아서 표시
+      const targetMarkers = isInterest ? interestMarkers : markers
+      const marker = targetMarkers.find((m) => {
+        const mPos = m.getPosition()
+        return (
+          Math.abs(mPos.getLat() - markerPosition.getLat()) < 0.0000001 &&
+          Math.abs(mPos.getLng() - markerPosition.getLng()) < 0.0000001
+        )
       })
-      infowindow.open(map, marker)
+      if (marker) {
+        infowindow.open(map, marker)
+      }
     }
   }
 }
@@ -600,25 +664,6 @@ function formatPrice(price) {
 
   // 정확히 n억인 경우
   return `${uk}억`
-}
-
-const handleMoveMap = ({ center, bounds, level }) => {
-  if (map) {
-    // 지도 중심 이동
-    const moveLatLng = new window.kakao.maps.LatLng(center.lat, center.lng)
-    map.setCenter(moveLatLng)
-
-    // 지도 레벨 설정
-    map.setLevel(level)
-
-    // bounds 설정
-    const sw = new window.kakao.maps.LatLng(bounds.minLat, bounds.minLng)
-    const ne = new window.kakao.maps.LatLng(bounds.maxLat, bounds.maxLng)
-    const mapBounds = new window.kakao.maps.LatLngBounds(sw, ne)
-
-    // bounds에 약간의 여유 공간을 주기 위해 extend 사용
-    map.setBounds(mapBounds, 50) // 50은 픽셀 단위의 padding
-  }
 }
 </script>
 

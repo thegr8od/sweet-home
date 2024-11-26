@@ -3,7 +3,7 @@
     <div class="w-full max-w-md space-y-8">
       <!-- Logo -->
       <div class="flex justify-center mb-6">
-        <h1 class="text-3xl font-bold">SWEET HOME</h1>
+        <!-- <h1 class="text-3xl font-bold">SWEET HOME</h1> -->
       </div>
 
       <!-- Register Form -->
@@ -160,7 +160,7 @@
           <!-- Login Link -->
           <div class="text-center mt-4">
             <p class="text-sm text-gray-600">
-              이미 SWEET HOME 회원이신가요?
+              이미 스위트홈 회원이신가요?
               <router-link to="/login" class="text-blue-600 hover:text-blue-500 font-medium">
                 로그인
               </router-link>
@@ -322,7 +322,7 @@ const handleSubmit = async () => {
     })
 
     alert('회원가입이 완료되었습니다.')
-    userStore.setLogout()  // 상태 초기화
+    userStore.setLogout() // 상태 초기화
     router.push('/login')
   } catch (error) {
     console.error('회원가입 실패:', error)

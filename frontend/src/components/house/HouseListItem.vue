@@ -45,8 +45,14 @@ export default {
     },
   },
   methods: {
-    selectHouse() {
+    async selectHouse() {
       console.log('Selected house:', this.house)
+
+      if (this.house.aptSeq) {
+        await this.houseStore.getDetail({ aptSeq: this.house.aptSeq })
+      }
+
+      this.houseStore.setSelectedHouse(this.house)
 
       if (this.house.latitude && this.house.longitude) {
         const position = {
@@ -54,13 +60,6 @@ export default {
           lng: parseFloat(this.house.longitude),
         }
         this.houseStore.setSelectedPosition(position)
-      }
-
-      this.houseStore.setSelectedHouse(this.house)
-
-      console.log('this.house.aptSeq:', this.house.aptSeq)
-      if (this.house.aptSeq) {
-        this.houseStore.getDetail({ aptSeq: this.house.aptSeq })
       }
 
       if (this.house.roadName) {

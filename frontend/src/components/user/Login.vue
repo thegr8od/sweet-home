@@ -3,7 +3,10 @@
     <div class="w-full max-w-md space-y-8">
       <!-- Logo -->
       <div class="flex justify-center mb-6">
-        <h1 class="text-3xl font-bold">SWEET HOME</h1>
+        <div class="flex items-center gap-2">
+          <img src="@/assets/img/home.png" alt="Home Logo" class="w-10 h-10" />
+          <span class="font-dohyeon text-3xl font-bold mt-1" style="color: #2196f3">스위트홈</span>
+        </div>
       </div>
 
       <!-- Login Form -->
@@ -75,7 +78,11 @@
               </label>
             </div>
             <div class="text-sm">
-              <a href="#" class="text-blue-600 hover:text-blue-500" @click.prevent="openForgotPassword">
+              <a
+                href="#"
+                class="text-blue-600 hover:text-blue-500"
+                @click.prevent="openForgotPassword"
+              >
                 비밀번호 찾기
               </a>
             </div>
@@ -116,12 +123,7 @@
             @click="loginWithKakao"
             class="w-full flex justify-center items-center py-3 px-4 rounded-md text-sm font-medium text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 transition-colors duration-200"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              class="mr-2"
-            >
+            <svg width="18" height="18" viewBox="0 0 18 18" class="mr-2">
               <path
                 fill="#191919"
                 d="M9 1C4.03 1 0 4.13 0 7.99c0 2.53 1.67 4.75 4.21 6.01-.14.49-.44 1.75-.5 2.02 0 0-.02.16.08.22.1.06.21.02.21.02.28-.04 3.24-2.14 3.75-2.5.4.06.81.08 1.24.08 4.97 0 9-3.13 9-6.99C18 4.13 13.97 1 9 1z"
@@ -157,10 +159,7 @@
   </div>
 
   <!-- 비밀번호 찾기 모달 추가 -->
-  <ForgotPassword
-    :is-open="showForgotPassword"
-    @close="closeForgotPassword"
-  />
+  <ForgotPassword :is-open="showForgotPassword" @close="closeForgotPassword" />
 </template>
 
 <script setup>
@@ -271,5 +270,9 @@ const closeForgotPassword = () => {
 </script>
 
 <style scoped>
-/* Add any additional custom styles here if needed */
+@import url('https://fonts.googleapis.com/css?family=Do+Hyeon:400');
+
+.font-dohyeon {
+  font-family: 'Do Hyeon', sans-serif;
+}
 </style>
