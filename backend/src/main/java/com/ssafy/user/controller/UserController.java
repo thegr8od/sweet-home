@@ -257,4 +257,26 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "비밀번호 재설정", description = "이메일로 임시 비밀번호 발송")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("이메일을 입력해주세요.");
+            }
+            
+            boolean result = userService.resetPassword(email);
+            if (result) {
+                return ResponseEntity.ok("임시 비밀번호가 이메일로 발송되었습니다.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("해당 이메일로 등록된 계정을 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("비밀번호 재설정 중 오류가 발생했습니다.");
+        }
+    }
 }

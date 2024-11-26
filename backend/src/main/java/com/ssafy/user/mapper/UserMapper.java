@@ -27,4 +27,8 @@ public interface UserMapper {
                        @Param("newPassword") String newPassword) throws SQLException;
 
     void updateProfileImage(@Param("userId") String userId, @Param("profileImage") String profileImage) throws SQLException;
+
+    UserDto findUserByEmail(String email) throws SQLException;
+
+    void updatePassword(@Param("userId") String userId, @Param("newPassword") String newPassword) throws SQLException;
 }
