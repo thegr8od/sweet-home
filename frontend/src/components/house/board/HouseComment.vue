@@ -26,6 +26,7 @@
                   </button>
                 </div>
                 <button
+                  v-if="!isMyPost && userStore.isLoggedIn"
                   class="text-sm text-blue-500 border border-blue-500 rounded-full px-3 py-1 hover:bg-blue-50"
                 >
                   + 팔로우

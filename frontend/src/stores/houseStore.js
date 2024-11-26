@@ -6,9 +6,9 @@ import {
   houseDealListByAptSeq,
   getHouseDealsByMapBounds,
   getHouseInfoByAptName,
-  } from '@/api/house.js'
+  getHouseDealCoordinateByMapBounds,
+} from '@/api/house.js'
 import { useInterestStore } from '@/stores/interestStore'
-
 
 export const useHouseStore = defineStore('houseStore', {
   state: () => ({
@@ -36,7 +36,6 @@ export const useHouseStore = defineStore('houseStore', {
       console.log(bounds)
       const interestStore = useInterestStore()
 
-
       try {
         await getHouseDealsByMapBounds(
           bounds,
@@ -62,7 +61,6 @@ export const useHouseStore = defineStore('houseStore', {
                 })
                 .filter((position) => position !== null)
 
-
               // 각 아파트의 최고가 정보 저장
               this.houseDetails = data.map((house) => ({
                 maxPrice: house.maxPrice || '?',
@@ -71,7 +69,6 @@ export const useHouseStore = defineStore('houseStore', {
 
               // 관심 매물 정보 업데이트
               interestStore.updateInterestDetails(this.houses, this.houseDetails)
-
 
               console.log('houses:', this.houses)
               console.log('markerPositions:', this.markerPositions)
@@ -84,6 +81,40 @@ export const useHouseStore = defineStore('houseStore', {
         )
       } catch (error) {
         console.error('Error in onBoundsChanged:', error)
+      }
+    },
+
+    async onBoundsChangedCoordinate(bounds) {
+      try {
+        await getHouseDealCoordinateByMapBounds(
+          bounds,
+          ({ data }) => {
+            if (data && Array.isArray(data)) {
+              this.houses = data.map((house) => ({
+                aptName: house.aptName,
+                aptSeq: house.aptSeq,
+                legalDong: house.legalDong,
+                latitude: house.latitude,
+                longitude: house.longitude,
+              }))
+
+              // markerPositions 업데이트
+              this.markerPositions = data
+                .filter((house) => house.latitude && house.longitude)
+                .map((house) => {
+                  const lat = parseFloat(house.latitude)
+                  const lng = parseFloat(house.longitude)
+                  return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : null
+                })
+                .filter((position) => position !== null)
+            }
+          },
+          (error) => {
+            console.error('아파트 좌표 정보 조회 실패:', error)
+          },
+        )
+      } catch (error) {
+        console.error('Error in onBoundsChangedCoordinate:', error)
       }
     },
 
@@ -421,4 +452,3 @@ export const useHouseStore = defineStore('houseStore', {
     },
   },
 })
-

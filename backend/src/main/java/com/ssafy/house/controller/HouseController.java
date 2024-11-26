@@ -15,6 +15,7 @@ import com.ssafy.dong.model.service.DongCodeService;
 import com.ssafy.house.model.HouseDealResponseDto;
 import com.ssafy.house.model.HouseDealSimpleResponseDto;
 import com.ssafy.house.model.HouseInfoDto;
+import com.ssafy.house.model.HouseDealCoordinateDto;
 import com.ssafy.house.model.service.HouseService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -150,5 +151,26 @@ public class HouseController {
         
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
-    //
+    
+
+    
+    @GetMapping("/map/coordinate")    
+    @Operation(summary = "좌표 범위 내 아파트 좌표 정보 조회", description = "지도의 특정 영역 내에 있는 아파트의 좌표 정보를 조회합니다")
+    public ResponseEntity<List<HouseDealCoordinateDto>> getHouseDealCoordinateByMapBounds(
+            @RequestParam String minLat,
+            @RequestParam String maxLat,
+            @RequestParam String minLng,
+            @RequestParam String maxLng,
+            @RequestParam Integer limit) {
+        
+        List<HouseDealCoordinateDto> result = houseService.getHouseDealCoordinateByCoordinates(minLat, maxLat, minLng, maxLng, limit);
+        
+        if (result.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+    
+
 }

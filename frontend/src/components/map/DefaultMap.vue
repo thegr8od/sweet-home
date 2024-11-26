@@ -205,8 +205,7 @@ function updateArea() {
   var level = map.getLevel()
   console.log('level:', level)
 
-  var limit = 100
-
+  var limit = 500
   if (level <= 3) {
     limit = 5000
   } else if (level <= 4) {
@@ -217,12 +216,6 @@ function updateArea() {
     limit = 200
   } else if (level <= 7) {
     limit = 100
-  } else if (level == 8) {
-    limit = 30
-  } else if (level == 9) {
-    limit = 40
-  } else if (level == 10) {
-    limit = 50
   }
   console.log('limit:', limit)
 
@@ -236,7 +229,16 @@ function updateArea() {
       limit: limit,
     }
     console.log('지도 영역:', params)
-    houseStore.onBoundsChanged(params)
+
+    // 레벨에 따라 다른 API 호출
+    if (level >= 8) {
+      // 레벨이 8 이상일 때는 좌표만 받아오는 API 호출
+      houseStore.onBoundsChangedCoordinate(params)
+    } else {
+      // 레벨이 8 미만일 때는 기존 API 호출
+      houseStore.onBoundsChanged(params)
+    }
+
     updateAllMarkers(markerPositions.value)
     console.log('clusterer:', clusterer)
   }

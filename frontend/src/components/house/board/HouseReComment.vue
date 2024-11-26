@@ -22,7 +22,13 @@
             삭제
           </button>
         </div>
-        <button class="text-xs text-blue-500 hover:text-blue-600">+ 팔로우</button>
+        <!-- 팔로우 버튼 (자신의 댓글이 아닐 경우만 표시) -->
+        <button
+          v-if="!isMyComment && userStore.isLoggedIn"
+          class="text-xs text-blue-500 hover:text-blue-600"
+        >
+          + 팔로우
+        </button>
       </div>
     </div>
 

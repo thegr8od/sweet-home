@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.ssafy.house.model.HouseDealResponseDto;
 import com.ssafy.house.model.HouseDealSimpleResponseDto;
+import com.ssafy.house.model.HouseDealCoordinateDto;
 import com.ssafy.house.model.HouseInfoDto;
 
 public interface HouseService {
@@ -39,4 +40,7 @@ public interface HouseService {
 
 	// 특정 좌표 범위 내의 아파트 실거래 정보 조회
 	List<HouseDealSimpleResponseDto> getHouseDealsByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit);
+
+	// 특정 좌표 범위 내의 아파트 좌표 정보 조회
+	List<HouseDealCoordinateDto> getHouseDealCoordinateByCoordinates(String minLat, String maxLat, String minLng, String maxLng, Integer limit);
 }
