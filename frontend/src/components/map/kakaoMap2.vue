@@ -1,10 +1,15 @@
 <template>
   <div>
     <div id="map"></div>
-    하위이
-    <div class="button-group">
-      <button @click="changeSize(400)">show</button>
-      <button @click="displayInfoWindow">infowindow</button>
+    <div class="category-group">
+      <button
+        v-for="category in categories"
+        :key="category.code"
+        @click="searchCategory(category.code)"
+        :class="{ active: selectedCategory === category.code }"
+      >
+        {{ category.name }}
+      </button>
     </div>
   </div>
 </template>
@@ -16,12 +21,19 @@ export default {
     return {
       infowindow: null,
       position: {
-        lat: 33.450701, // 초기 위치 (위도, 경도)
+        lat: 33.450701,
         lng: 126.570667,
       },
       itemMarker: null,
       map: null,
-      center: null,
+      ps: null,
+      markers: [],
+      selectedCategory: null,
+      categories: [
+        { name: '지하철역', code: 'SW8' },
+        { name: '버스정류장', code: 'SW9' },
+      ],
+      currentCategory: null,
     }
   },
   mounted() {
@@ -37,10 +49,23 @@ export default {
       const container = document.getElementById('map')
       const options = {
         center: new kakao.maps.LatLng(this.position.lat, this.position.lng),
-        level: 5, // 지도 확대 수준
+        level: 5,
       }
 
       this.map = new kakao.maps.Map(container, options)
+      this.ps = new kakao.maps.services.Places(this.map)
+
+      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+        if (this.currentCategory) {
+          this.searchCategory(this.currentCategory)
+        }
+      })
+
+      kakao.maps.event.addListener(this.map, 'dragend', () => {
+        if (this.currentCategory) {
+          this.searchCategory(this.currentCategory)
+        }
+      })
 
       const markerPosition = new kakao.maps.LatLng(this.position.lat, this.position.lng)
       this.itemMarker = new kakao.maps.Marker({
@@ -53,7 +78,7 @@ export default {
       const container = document.getElementById('map')
       container.style.width = `${size}px`
       container.style.height = `${size}px`
-      this.map.relayout() // 지도 크기 변경 후 재배치
+      this.map.relayout()
     },
     displayInfoWindow() {
       if (this.infowindow && this.infowindow.getMap()) {
@@ -74,6 +99,59 @@ export default {
 
       this.map.setCenter(iwPosition)
     },
+    searchCategory(categoryCode) {
+      this.markers.forEach((marker) => marker.setMap(null))
+      this.markers = []
+
+      if (this.selectedCategory === categoryCode) {
+        this.selectedCategory = null
+        this.currentCategory = null
+        return
+      }
+
+      this.selectedCategory = categoryCode
+      this.currentCategory = categoryCode
+
+      const center = this.map.getCenter()
+      const bounds = this.map.getBounds()
+
+      this.ps.categorySearch(
+        categoryCode,
+        (data, status) => {
+          if (status === kakao.maps.services.Status.OK) {
+            data.forEach((place) => {
+              const marker = new kakao.maps.Marker({
+                position: new kakao.maps.LatLng(place.y, place.x),
+                map: this.map,
+              })
+
+              kakao.maps.event.addListener(marker, 'click', () => {
+                if (this.infowindow) this.infowindow.close()
+
+                this.infowindow = new kakao.maps.InfoWindow({
+                  content: `
+                    <div style="padding:5px;font-size:12px;">
+                      <strong>${place.place_name}</strong><br>
+                      ${place.category_name}<br>
+                      <span style="color:#888;">${place.distance}m</span>
+                    </div>
+                  `,
+                  removable: true,
+                })
+                this.infowindow.open(this.map, marker)
+              })
+
+              this.markers.push(marker)
+            })
+          }
+        },
+        {
+          location: center,
+          bounds: bounds,
+          radius: 2000,
+        },
+      )
+    },
   },
 }
 </script>
@@ -87,7 +165,7 @@ export default {
 
 #map {
   width: 100%;
-  height: calc(100vh - 60px); /* navBar를 제외한 전체 화면 높이를 차지하도록 설정 */
+  height: calc(100vh - 60px);
 }
 
 .button-group {
@@ -96,5 +174,18 @@ export default {
 
 button {
   margin: 0 3px;
+}
+
+.category-group {
+  margin: 10px 0px;
+}
+
+.category-group button {
+  margin: 0 3px;
+}
+
+.category-group button.active {
+  background-color: #007bff;
+  color: #fff;
 }
 </style>
